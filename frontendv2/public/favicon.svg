@@ -1,0 +1,28 @@
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+  <rect width="256" height="256" rx="32" fill="#29142e"/>
+  <text
+    x="50%"
+    y="48%"
+    dominant-baseline="middle"
+    text-anchor="middle"
+    font-family="Consolas, Space Grotesk, sans-serif"
+    font-size="130"
+    font-weight="700"
+    fill="white"
+  >
+    S
+  </text>
+  <text
+    x="50%"
+    y="80%"
+    dominant-baseline="middle"
+    text-anchor="middle"
+    font-family="Consolas, Space Grotesk, sans-serif"
+    font-size="28"
+    font-weight="700"
+    letter-spacing="4"
+    fill="white"
+  >
+    SCAFLD
+  </text>
+</svg>
