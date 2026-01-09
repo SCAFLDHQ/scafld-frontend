@@ -48,6 +48,7 @@ export default function SocialAuthButtons() {
   const handleGoogleLogin = () => {
     if (!oauthConfig.google?.client_id || loading.google) {
       console.log('Google not configured or loading');
+      alert('Google OAuth is not configured. Please contact support.');
       return;
     }
 
@@ -89,6 +90,7 @@ export default function SocialAuthButtons() {
   const handleGitHubLogin = () => {
     if (!oauthConfig.github?.client_id || loading.github) {
       console.log('GitHub not configured or loading');
+      alert('GitHub OAuth is not configured. Please contact support.');
       return;
     }
     
