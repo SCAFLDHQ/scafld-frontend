@@ -38,7 +38,6 @@ class ApiService {
     try {
       const response = await fetch(url, config);
 
-      // Handle token refresh on 401
       if (response.status === 401 && this.refreshToken) {
         try {
           const refreshResponse = await this.refreshAccessToken();
@@ -122,12 +121,12 @@ class ApiService {
   }
 
   async getGoogleOAuthConfig() {
-    const response = await this.request('/auth/google/config/');
+    const response = await fetch(`${this.baseURL}/auth/google/config/`);
     return response;
   }
 
   async githubOAuth(code) {
-    const response = await fetch(`${this.baseURL}/auth/github/callback/`, {
+    const response = await fetch(`${this.baseURL}/auth/github/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -138,7 +137,7 @@ class ApiService {
   }
 
   async getGitHubOAuthConfig() {
-    const response = await this.request('/auth/github/config/');
+    const response = await fetch(`${this.baseURL}/auth/github/config/`);
     return response;
   }
 

@@ -2,96 +2,114 @@ import { motion } from 'motion/react';
 import { Github } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import apiService from '../../services/api';
 
 export default function SocialAuthButtons() {
-  const { googleLogin, githubLogin } = useAuth();
+  const { googleLogin } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState({ google: false, github: false });
   const [oauthConfig, setOauthConfig] = useState({ google: null, github: null });
+  const configsLoaded = useRef(false);
 
   useEffect(() => {
-    loadOAuthConfigs();
+    // Prevent duplicate config loading
+    if (configsLoaded.current) return;
+    configsLoaded.current = true;
+
+    const loadConfigs = async () => {
+      try {
+        const [googleResponse, githubResponse] = await Promise.all([
+          apiService.getGoogleOAuthConfig(),
+          apiService.getGitHubOAuthConfig()
+        ]);
+        
+        let googleData = null;
+        if (googleResponse.ok) {
+          googleData = await googleResponse.json();
+          console.log('Google config loaded:', googleData);
+        }
+        
+        let githubData = null;
+        if (githubResponse.ok) {
+          githubData = await githubResponse.json();
+          console.log('GitHub config loaded:', githubData);
+        }
+
+        setOauthConfig({ google: googleData, github: githubData });
+      } catch (error) {
+        console.error('Failed to load OAuth configs:', error);
+      }
+    };
+    
+    loadConfigs();
   }, []);
 
-  const loadOAuthConfigs = async () => {
-    try {
-      const [googleResponse, githubResponse] = await Promise.all([
-        apiService.getGoogleOAuthConfig(),
-        apiService.getGitHubOAuthConfig()
-      ]);
-      
-      if (googleResponse.ok) {
-        const googleData = await googleResponse.json();
-        setOauthConfig(prev => ({ ...prev, google: googleData }));
-      }
-      
-      if (githubResponse.ok) {
-        const githubData = await githubResponse.json();
-        setOauthConfig(prev => ({ ...prev, github: githubData }));
-      }
-    } catch (error) {
-      console.error('Failed to load OAuth configs:', error);
+  const handleGoogleLogin = () => {
+    if (!oauthConfig.google?.client_id || loading.google) {
+      console.log('Google not configured or loading');
+      return;
     }
-  };
 
-  const handleGoogleLogin = async () => {
     setLoading(prev => ({ ...prev, google: true }));
+
     try {
-      // Load Google API
-      if (!window.google) {
-        await new Promise((resolve, reject) => {
-          const script = document.createElement('script');
-          script.src = 'https://accounts.google.com/gsi/client';
-          script.onload = resolve;
-          script.onerror = reject;
-          document.head.appendChild(script);
-        });
-      }
+      const clientId = oauthConfig.google.client_id;
+      const redirectUri = `${window.location.origin}/auth/google/callback`;
+      const scope = 'openid email profile';
+      const state = Math.random().toString(36).substring(2, 15);
+      const nonce = Math.random().toString(36).substring(2, 15);
+      
+      // Store state for verification on callback
+      sessionStorage.setItem('google_oauth_state', state);
 
-      // Initialize Google Sign-In
-      const clientId = oauthConfig.google?.client_id || import.meta.env.VITE_GOOGLE_CLIENT_ID;
-      window.google.accounts.id.initialize({
-        client_id: clientId,
-        callback: async (response) => {
-          const result = await googleLogin(response.credential);
-          if (result.success) {
-            navigate('/dashboard');
-          } else {
-            alert(result.error);
-          }
-          setLoading(prev => ({ ...prev, google: false }));
-        },
-      });
+      const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
+        `client_id=${encodeURIComponent(clientId)}` +
+        `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+        `&response_type=id_token` +
+        `&scope=${encodeURIComponent(scope)}` +
+        `&state=${encodeURIComponent(state)}` +
+        `&nonce=${encodeURIComponent(nonce)}` +
+        `&prompt=select_account`;
 
-      // Render the button
-      window.google.accounts.id.renderButton(
-        document.getElementById('google-signin-button'),
-        { theme: 'outline', size: 'large', width: '100%' }
-      );
+      console.log('Google Auth URL:', googleAuthUrl);
+      console.log('Redirect URI being used:', redirectUri);
 
-      // Trigger the sign-in
-      window.google.accounts.id.prompt();
-
+      console.log('Redirecting to Google:', googleAuthUrl);
+      
+      // For popup flow, redirect directly
+      window.location.href = googleAuthUrl;
     } catch (error) {
-      console.error('Google login setup failed:', error);
-      alert('Failed to initialize Google login');
+      console.error('Google login failed:', error);
+      alert('Failed to start Google login');
       setLoading(prev => ({ ...prev, google: false }));
     }
   };
 
-  const handleGitHubLogin = async () => {
+  const handleGitHubLogin = () => {
+    if (!oauthConfig.github?.client_id || loading.github) {
+      console.log('GitHub not configured or loading');
+      return;
+    }
+    
     setLoading(prev => ({ ...prev, github: true }));
+    
     try {
-      // GitHub OAuth flow - redirect to GitHub
-      const clientId = 'Ov23li0J7D9n9CaOfywr';
-      const redirectUri = 'http://localhost:5173/auth/github/callback';
+      const clientId = oauthConfig.github.client_id;
+      const redirectUri = `${window.location.origin}/auth/github/callback`;
       const scope = 'user:email';
       const state = Math.random().toString(36).substring(2, 15);
+      
+      // Store state for verification on callback
+      sessionStorage.setItem('github_oauth_state', state);
 
-      const githubUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${scope}&state=${state}`;
+      const githubUrl = `https://github.com/login/oauth/authorize?` +
+        `client_id=${clientId}` +
+        `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+        `&scope=${scope}` +
+        `&state=${state}`;
 
+      console.log('Redirecting to GitHub:', githubUrl);
       window.location.href = githubUrl;
     } catch (error) {
       console.error('GitHub login failed:', error);
@@ -103,9 +121,8 @@ export default function SocialAuthButtons() {
   return (
     <div className="space-y-2 sm:space-y-3">
       <motion.button
-        id="google-signin-button"
         onClick={handleGoogleLogin}
-        disabled={loading.google}
+        disabled={loading.google || !oauthConfig.google}
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
         className="w-full px-4 sm:px-6 py-2 sm:py-3 bg-white/5 text-white border-2 border-white/10 flex items-center justify-center gap-2 sm:gap-3 transition-all hover:bg-white/10 hover:border-white/20 rounded-lg text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed"
@@ -135,7 +152,7 @@ export default function SocialAuthButtons() {
 
       <motion.button
         onClick={handleGitHubLogin}
-        disabled={loading.github}
+        disabled={loading.github || !oauthConfig.github}
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
         className="w-full px-4 sm:px-6 py-2 sm:py-3 bg-[#24292e] text-white border-2 border-[#24292e] flex items-center justify-center gap-2 sm:gap-3 transition-all hover:bg-[#2f363d] rounded-lg text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed"

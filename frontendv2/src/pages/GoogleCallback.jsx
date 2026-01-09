@@ -4,13 +4,13 @@ import { useAuth } from '../contexts/AuthContext';
 import { motion } from 'motion/react';
 import { Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
 
-export default function GitHubCallback() {
+export default function GoogleCallback() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { githubLogin } = useAuth();
+  const { googleLogin } = useAuth();
   const [status, setStatus] = useState('processing');
   const [errorMessage, setErrorMessage] = useState('');
-  const hasProcessed = useRef(false); // Prevent duplicate processing
+  const hasProcessed = useRef(false);
 
   useEffect(() => {
     const handleCallback = async () => {
@@ -21,64 +21,76 @@ export default function GitHubCallback() {
       hasProcessed.current = true;
 
       try {
-        const params = new URLSearchParams(location.search);
-        const code = params.get('code');
+        // Google returns id_token in URL hash fragment
+        const hash = window.location.hash.substring(1);
+        const params = new URLSearchParams(hash);
+        
+        const idToken = params.get('id_token');
         const error = params.get('error');
         const errorDescription = params.get('error_description');
         const state = params.get('state');
 
-        // Handle OAuth errors from GitHub
+        console.log('Google callback received:', { 
+          hasIdToken: !!idToken, 
+          error, 
+          errorDescription 
+        });
+
+        // Handle OAuth errors from Google
         if (error) {
-          console.error('GitHub OAuth error:', error, errorDescription);
+          console.error('Google OAuth error:', error, errorDescription);
           setStatus('error');
           setErrorMessage(
             errorDescription || 
-            'GitHub authentication was denied or failed. Please try again.'
+            'Google authentication was denied or failed. Please try again.'
           );
           setTimeout(() => navigate('/login', { replace: true }), 3000);
           return;
         }
 
-        // Validate we have a code
-        if (!code) {
-          console.error('No authorization code received from GitHub');
+        // Validate we have an id_token
+        if (!idToken) {
+          console.error('No ID token received from Google');
           setStatus('error');
-          setErrorMessage('No authorization code received. Please try again.');
+          setErrorMessage('No ID token received. Please try again.');
           setTimeout(() => navigate('/login', { replace: true }), 3000);
           return;
         }
 
         // Optional: Verify state parameter for CSRF protection
-        const storedState = sessionStorage.getItem('github_oauth_state');
+        const storedState = sessionStorage.getItem('google_oauth_state');
         if (storedState && state !== storedState) {
           console.error('State mismatch - possible CSRF attack');
           setStatus('error');
           setErrorMessage('Security validation failed. Please try again.');
-          sessionStorage.removeItem('github_oauth_state');
+          sessionStorage.removeItem('google_oauth_state');
           setTimeout(() => navigate('/login', { replace: true }), 3000);
           return;
         }
 
         // Clean up stored state
-        sessionStorage.removeItem('github_oauth_state');
+        sessionStorage.removeItem('google_oauth_state');
 
-        // Exchange code for tokens via backend
+        // Send id_token to backend
+        console.log('Sending ID token to backend...');
         setStatus('processing');
-        const result = await githubLogin(code);
+        const result = await googleLogin(idToken);
 
         if (result.success) {
+          console.log('Google login successful');
           setStatus('success');
           // Short delay to show success message
           setTimeout(() => {
             navigate('/dashboard', { replace: true });
           }, 1000);
         } else {
+          console.error('Google login failed:', result.error);
           setStatus('error');
-          setErrorMessage(result.error || 'Failed to complete GitHub authentication');
+          setErrorMessage(result.error || 'Failed to complete Google authentication');
           setTimeout(() => navigate('/login', { replace: true }), 3000);
         }
       } catch (error) {
-        console.error('GitHub callback error:', error);
+        console.error('Google callback error:', error);
         setStatus('error');
         setErrorMessage('An unexpected error occurred. Please try again.');
         setTimeout(() => navigate('/login', { replace: true }), 3000);
@@ -86,7 +98,7 @@ export default function GitHubCallback() {
     };
 
     handleCallback();
-  }, []); // Empty deps - only run once
+  }, []);
 
   return (
     <div className="min-h-screen bg-black flex items-center justify-center px-4">
@@ -103,7 +115,7 @@ export default function GitHubCallback() {
             </div>
             <div className="space-y-2">
               <h1 className="text-2xl font-bold text-white">
-                Completing GitHub Authentication
+                Completing Google Authentication
               </h1>
               <p className="text-white/60">
                 Please wait while we securely sign you in...
@@ -118,7 +130,7 @@ export default function GitHubCallback() {
                 className="flex items-center gap-3 text-white/60"
               >
                 <div className="w-2 h-2 bg-[#29142e] rounded-full"></div>
-                <span className="text-sm">Verifying GitHub credentials</span>
+                <span className="text-sm">Verifying Google credentials</span>
               </motion.div>
               <motion.div
                 initial={{ opacity: 0, x: -20 }}
