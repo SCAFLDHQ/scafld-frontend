@@ -10,8 +10,8 @@ import Dashboard from './pages/Dashboard';
 import Canvas from './pages/Canvas';
 import GitHubCallback from './pages/GitHubCallback';
 import GoogleCallback from './pages/GoogleCallback';
+import { Navigate } from 'react-router-dom';
 import AccountSettings from './pages/AccountSettings';
-import Profile from './pages/Profile';
 import NotFound from './pages/NotFound';
 
 export default function App() {
@@ -30,15 +30,17 @@ export default function App() {
           <Route path="/dashboard" element={
             <ProtectedRoute><Dashboard /></ProtectedRoute>
           } />
+          <Route path="/project/:projectId" element={
+            <ProtectedRoute><Canvas /></ProtectedRoute>
+          } />
+          {/* Legacy redirect — keep old canvas links working */}
           <Route path="/canvas/:projectId" element={
             <ProtectedRoute><Canvas /></ProtectedRoute>
           } />
           <Route path="/settings" element={
             <ProtectedRoute><AccountSettings /></ProtectedRoute>
           } />
-          <Route path="/profile" element={
-            <ProtectedRoute><Profile /></ProtectedRoute>
-          } />
+          <Route path="/profile" element={<Navigate to="/settings" replace />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

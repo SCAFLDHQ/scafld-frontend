@@ -14,7 +14,19 @@ export default function Dashboard({ onProjectCreated }) {
   const [userProfile, setUserProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
   const { user } = useAuth();
+
+  const filteredProjects = searchQuery.trim()
+    ? projects.filter(p => {
+        const q = searchQuery.toLowerCase();
+        return (
+          p.name?.toLowerCase().includes(q) ||
+          p.description?.toLowerCase().includes(q) ||
+          p.framework?.toLowerCase().includes(q)
+        );
+      })
+    : projects;
 
   useEffect(() => {
     fetchDashboardData();
@@ -76,7 +88,7 @@ export default function Dashboard({ onProjectCreated }) {
 
   return (
     <div className="min-h-screen bg-black">
-      <DashboardNavbar />
+      <DashboardNavbar searchQuery={searchQuery} onSearchChange={setSearchQuery} />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-8 sm:space-y-12">
         {/* AI Prompt Section */}
@@ -114,9 +126,9 @@ export default function Dashboard({ onProjectCreated }) {
           )}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-            <CreateProjectCard onClick={handleCreateProject} />
-            {projects.length > 0 ? (
-              projects.map((project) => (
+            {!searchQuery && <CreateProjectCard onClick={handleCreateProject} />}
+            {filteredProjects.length > 0 ? (
+              filteredProjects.map((project) => (
                 <ProjectCard
                   key={project.id}
                   name={project.name}
@@ -129,8 +141,8 @@ export default function Dashboard({ onProjectCreated }) {
               ))
             ) : (
               <div className="col-span-full text-center py-12">
-                <p className="text-white/60 text-lg">No projects yet</p>
-                <p className="text-white/40 mt-2">Create your first project to get started</p>
+                <p className="text-white/60 text-lg">{searchQuery ? `No projects match "${searchQuery}"` : 'No projects yet'}</p>
+                <p className="text-white/40 mt-2">{searchQuery ? 'Try a different search term' : 'Create your first project to get started'}</p>
               </div>
             )}
           </div>
@@ -138,34 +150,9 @@ export default function Dashboard({ onProjectCreated }) {
 
         {/* Templates Section */}
         <section>
-          <TemplateCarousel />
+          <TemplateCarousel searchQuery={searchQuery} />
         </section>
 
-        {/* Stats Section */}
-        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-          <div className="bg-white/5 border border-white/10 p-4 sm:p-6 rounded-lg">
-            <div className="text-white/40 text-xs sm:text-sm mb-2">Total Projects</div>
-            <div className="text-white text-xl sm:text-2xl">{projects.length}</div>
-          </div>
-          <div className="bg-white/5 border border-white/10 p-4 sm:p-6 rounded-lg">
-            <div className="text-white/40 text-xs sm:text-sm mb-2">Credits Remaining</div>
-            <div className="text-white text-xl sm:text-2xl">
-              {['pro','max'].includes(userProfile?.tier) ? '∞' : (userProfile?.credits ?? 0)}
-            </div>
-          </div>
-          <div className="bg-white/5 border border-white/10 p-4 sm:p-6 rounded-lg">
-            <div className="text-white/40 text-xs sm:text-sm mb-2">Subscription</div>
-            <div className="text-white text-xl sm:text-2xl">
-              {userProfile?.subscription_tier?.name || userProfile?.tier || 'Free'}
-            </div>
-          </div>
-          <div className="bg-white/5 border border-white/10 p-4 sm:p-6 rounded-lg">
-            <div className="text-white/40 text-xs sm:text-sm mb-2">Projects Limit</div>
-            <div className="text-white text-xl sm:text-2xl">
-              {projects.length}/{userProfile?.projects_limit || userProfile?.project_limit || '∞'}
-            </div>
-          </div>
-        </section>
       </main>
 
       {/* Create Project Wizard Modal */}

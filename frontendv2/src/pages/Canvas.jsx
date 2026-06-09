@@ -26,6 +26,11 @@ import RelationshipModal from '../components/Canvas/RelationshipModal';
 import CanvasSidebar from '../components/Canvas/CanvasSidebar';
 import CanvasAIChat from '../components/Canvas/CanvasAIChat';
 import ProjectSettingsModal from '../components/Canvas/ProjectSettingsModal';
+import RequirementsPanel from '../components/Canvas/tabs/RequirementsPanel';
+import ArchitecturePanel from '../components/Canvas/tabs/ArchitecturePanel';
+import GitHubPanel from '../components/Canvas/tabs/GitHubPanel';
+import MCPPanel from '../components/Canvas/tabs/MCPPanel';
+import OverviewPanel from '../components/Canvas/tabs/OverviewPanel';
 
 const NODE_TYPES = { modelNode: ModelNode };
 
@@ -187,6 +192,10 @@ export default function Canvas() {
     setToast({ type, msg });
     setTimeout(() => setToast(null), 4000);
   }, []);
+
+  // Sidebar / tab state
+  const [activeTab, setActiveTab] = useState('schema');
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   // Modals
   const [addModelOpen, setAddModelOpen] = useState(false);
@@ -644,6 +653,8 @@ Generate all files. For each file, start with the filename as a comment or headi
       <CanvasSidebar
         project={project}
         nodes={nodes}
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
         onExportJson={() => handleExport('json')}
         onExportYaml={() => handleExport('yaml')}
         onCopySpec={handleCopySpec}
@@ -654,108 +665,157 @@ Generate all files. For each file, start with the filename as a comment or headi
         generating={generating}
         exporting={exporting}
         onOpenProjectSettings={() => setProjectSettingsOpen(true)}
+        collapsed={sidebarCollapsed}
+        onCollapsedChange={setSidebarCollapsed}
       />
 
       {/* Main area */}
       <div className="flex-1 flex flex-col min-w-0">
 
-        {/* Top toolbar */}
+        {/* Top toolbar — always visible */}
         <div className="flex items-center gap-3 px-4 py-3 border-b border-white/10 bg-[#0a0a0a] flex-shrink-0">
           <div className="flex items-center gap-2 flex-1 min-w-0">
             <Database className="w-4 h-4 text-[#a78bfa] flex-shrink-0" />
             <span className="text-white font-medium text-sm truncate">{project?.name || 'Project'}</span>
-            <span className="text-white/30 text-xs hidden sm:inline">
-              {modelCount} model{modelCount !== 1 ? 's' : ''} · {fieldCount} fields
-            </span>
+            {activeTab === 'schema' && (
+              <span className="text-white/30 text-xs hidden sm:inline">
+                {modelCount} model{modelCount !== 1 ? 's' : ''} · {fieldCount} fields
+              </span>
+            )}
+            {activeTab !== 'schema' && (
+              <span className="text-white/30 text-xs capitalize">{activeTab}</span>
+            )}
           </div>
 
-          {/* Save status */}
-          <div className="flex items-center gap-1 text-xs">
-            {saving && <Loader2 className="w-3 h-3 animate-spin text-white/40" />}
-            {saveStatus === 'saved' && <><CheckCircle2 className="w-3 h-3 text-green-400" /><span className="text-green-400">Saved</span></>}
-            {saveStatus === 'error' && <><AlertCircle className="w-3 h-3 text-red-400" /><span className="text-red-400">Error</span></>}
-          </div>
+          {/* Save status (schema only) */}
+          {activeTab === 'schema' && (
+            <div className="flex items-center gap-1 text-xs">
+              {saving && <Loader2 className="w-3 h-3 animate-spin text-white/40" />}
+              {saveStatus === 'saved' && <><CheckCircle2 className="w-3 h-3 text-green-400" /><span className="text-green-400">Saved</span></>}
+              {saveStatus === 'error' && <><AlertCircle className="w-3 h-3 text-red-400" /><span className="text-red-400">Error</span></>}
+            </div>
+          )}
 
-          <div className="flex items-center gap-2">
-            <button onClick={() => setAddModelOpen(true)}
-              title="Add model"
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-[#a78bfa] hover:text-white border border-[#a78bfa]/30 hover:border-[#a78bfa] rounded-lg transition-colors">
-              <Plus className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Model</span>
-            </button>
-
-            <button onClick={() => savePositions()} disabled={saving}
-              title="Save positions"
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-white/60 hover:text-white border border-white/10 hover:border-white/20 rounded-lg transition-colors disabled:opacity-40">
-              <Save className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Save</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Canvas */}
-        <div className="flex-1 relative">
-        {/* AI Chat overlay — right side, doesn't affect dock/layout */}
-        {aiChatOpen && (
-          <div className="absolute right-0 top-0 bottom-0 z-20 w-80 shadow-2xl">
-            <CanvasAIChat
-              projectId={projectId}
-              nodes={nodes}
-              onClose={() => setAiChatOpen(false)}
-              onSchemaUpdate={() => loadCanvas(true)}
-            />
-          </div>
-        )}
-        {nodes.length === 0 ? (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="text-center">
-              <Sparkles className="w-12 h-12 text-white/20 mx-auto mb-4" />
-              <p className="text-white/40 text-lg">Canvas is empty</p>
-              <p className="text-white/25 text-sm mt-2 mb-6">No models yet. Add one to get started.</p>
+          {/* Canvas actions (schema only) */}
+          {activeTab === 'schema' && (
+            <div className="flex items-center gap-2">
               <button onClick={() => setAddModelOpen(true)}
-                className="flex items-center gap-2 px-5 py-2.5 bg-[#29142e] text-white rounded-lg hover:bg-[#3a1f4a] transition-colors mx-auto text-sm">
-                <Plus className="w-4 h-4" />
-                Add first model
+                title="Add model"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-[#a78bfa] hover:text-white border border-[#a78bfa]/30 hover:border-[#a78bfa] rounded-lg transition-colors">
+                <Plus className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Model</span>
+              </button>
+              <button onClick={() => savePositions()} disabled={saving}
+                title="Save positions"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs text-white/60 hover:text-white border border-white/10 hover:border-white/20 rounded-lg transition-colors disabled:opacity-40">
+                <Save className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Save</span>
               </button>
             </div>
+          )}
+        </div>
+
+        {/* Schema / Canvas view */}
+        {activeTab === 'schema' && (
+          <div className="flex-1 relative">
+            {aiChatOpen && (
+              <div className="absolute right-0 top-0 bottom-0 z-20 w-80 shadow-2xl">
+                <CanvasAIChat
+                  projectId={projectId}
+                  nodes={nodes}
+                  onClose={() => setAiChatOpen(false)}
+                  onSchemaUpdate={() => loadCanvas(true)}
+                />
+              </div>
+            )}
+            {nodes.length === 0 ? (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="text-center">
+                  <Sparkles className="w-12 h-12 text-white/20 mx-auto mb-4" />
+                  <p className="text-white/40 text-lg">Canvas is empty</p>
+                  <p className="text-white/25 text-sm mt-2 mb-6">No models yet. Add one to get started.</p>
+                  <button onClick={() => setAddModelOpen(true)}
+                    className="flex items-center gap-2 px-5 py-2.5 bg-[#29142e] text-white rounded-lg hover:bg-[#3a1f4a] transition-colors mx-auto text-sm">
+                    <Plus className="w-4 h-4" />
+                    Add first model
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <ReactFlow
+                nodes={nodes}
+                edges={edges}
+                onNodesChange={handleNodesChange}
+                onEdgesChange={onEdgesChange}
+                onConnect={onConnect}
+                onEdgeClick={handleEdgeClick}
+                nodeTypes={NODE_TYPES}
+                fitView
+                fitViewOptions={{ padding: 0.35, maxZoom: 0.65 }}
+                minZoom={0.15}
+                maxZoom={2}
+                deleteKeyCode={null}
+                connectionLineStyle={{ stroke: '#a78bfa', strokeWidth: 2 }}
+                connectionRadius={40}
+              >
+                <Background color="#333" gap={24} size={1} />
+                <MiniMap
+                  position="bottom-right"
+                  nodeColor={() => '#29142e'}
+                  maskColor="rgba(0,0,0,0.6)"
+                  className="!bg-[#111]/90 !border-white/10 !rounded-xl !shadow-lg !backdrop-blur-sm"
+                />
+                <Panel position="bottom-center">
+                  <CanvasDock
+                    onAddModel={() => setAddModelOpen(true)}
+                    saving={saving}
+                    onSave={() => savePositions()}
+                    onToggleChat={() => setAiChatOpen(o => !o)}
+                    chatOpen={aiChatOpen}
+                    onRearrange={handleRearrange}
+                  />
+                </Panel>
+              </ReactFlow>
+            )}
           </div>
-        ) : (
-          <ReactFlow
-            nodes={nodes}
-            edges={edges}
-            onNodesChange={handleNodesChange}
-            onEdgesChange={onEdgesChange}
-            onConnect={onConnect}
-            onEdgeClick={handleEdgeClick}
-            nodeTypes={NODE_TYPES}
-            fitView
-            fitViewOptions={{ padding: 0.35, maxZoom: 0.65 }}
-            minZoom={0.15}
-            maxZoom={2}
-            deleteKeyCode={null}
-            connectionLineStyle={{ stroke: '#a78bfa', strokeWidth: 2 }}
-            connectionRadius={40}
-          >
-            <Background color="#333" gap={24} size={1} />
-            <MiniMap
-              position="bottom-right"
-              nodeColor={() => '#29142e'}
-              maskColor="rgba(0,0,0,0.6)"
-              className="!bg-[#111]/90 !border-white/10 !rounded-xl !shadow-lg !backdrop-blur-sm"
-            />
-            <Panel position="bottom-center">
-              <CanvasDock
-                onAddModel={() => setAddModelOpen(true)}
-                saving={saving}
-                onSave={() => savePositions()}
-                onToggleChat={() => setAiChatOpen(o => !o)}
-                chatOpen={aiChatOpen}
-                onRearrange={handleRearrange}
-              />
-            </Panel>
-          </ReactFlow>
         )}
-      </div>
+
+        {/* Feature panels — render in main area */}
+        {activeTab !== 'schema' && (
+          <div className="flex-1 overflow-hidden bg-[#080808]">
+            <div className="h-full max-w-4xl mx-auto">
+              {activeTab === 'overview' && (
+                <OverviewPanel
+                  project={project}
+                  nodes={nodes}
+                  onGenerateCode={handleGenerateCode}
+                  onCopySpec={handleCopySpec}
+                  onCopyPrompt={handleCopyPrompt}
+                  copied={copied}
+                  promptCopied={promptCopied}
+                  generating={generating}
+                  exporting={exporting}
+                />
+              )}
+              {activeTab === 'requirements' && (
+                <RequirementsPanel
+                  projectId={projectId}
+                  savedData={project?.requirements_data || null}
+                  onSaved={(data) => setProject(p => ({ ...p, requirements_data: data }))}
+                />
+              )}
+              {activeTab === 'architecture' && (
+                <ArchitecturePanel
+                  projectId={projectId}
+                  savedData={project?.architecture_data || null}
+                  onSaved={(data) => setProject(p => ({ ...p, architecture_data: data }))}
+                />
+              )}
+              {activeTab === 'github' && <GitHubPanel projectId={projectId} projectName={project?.name} />}
+              {activeTab === 'mcp' && <MCPPanel projectId={projectId} />}
+            </div>
+          </div>
+        )}
 
       </div>{/* end main area */}
 

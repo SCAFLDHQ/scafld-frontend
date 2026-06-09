@@ -101,24 +101,25 @@ export default function ModelNode({ data, selected }) {
           fields.slice(0, 10).map((field, i) => (
             <div
               key={field.id || i}
-              className="relative flex items-center gap-2 py-0.5"
+              className="relative flex items-center gap-2 py-0.5 pr-3"
               onMouseEnter={() => setHoveredField(field.id ?? i)}
               onMouseLeave={() => setHoveredField(null)}
             >
-              {/* Per-field source handle — visible on field hover */}
+              {/* Per-field source handle */}
               <Handle
                 type="source"
                 position={Position.Right}
                 id={fhid(field, i)}
+                onMouseEnter={() => setHoveredField(field.id ?? i)}
                 style={{
                   background: '#a78bfa',
                   width: 8, height: 8,
                   border: '2px solid #111',
                   borderRadius: '50%',
-                  right: -14, top: '50%',
+                  right: -8, top: '50%',
                   transform: 'translateY(-50%)',
-                  opacity: hoveredField === (field.id ?? i) ? 1 : 0,
-                  transition: 'opacity 0.1s',
+                  opacity: hoveredField === (field.id ?? i) ? 1 : 0.25,
+                  transition: 'opacity 0.15s',
                   cursor: 'crosshair',
                   zIndex: 10,
                 }}

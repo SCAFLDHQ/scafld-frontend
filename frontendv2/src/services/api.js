@@ -132,6 +132,17 @@ class ApiService {
     return fetch(`${this.baseURL}/auth/github/config/`);
   }
 
+  async githubStatus() {
+    return this.request('/auth/github/status/');
+  }
+
+  async githubConnect(code) {
+    return this.request('/auth/github/connect/', {
+      method: 'POST',
+      body: JSON.stringify({ code }),
+    });
+  }
+
   // ── Projects ──────────────────────────────────────────────────────────────
 
   async getProjects() {
@@ -359,6 +370,25 @@ class ApiService {
     return this.request('/ai/generate/', {
       method: 'POST',
       body: JSON.stringify({ description: data.description, framework: data.framework || 'django' }),
+    });
+  }
+
+  // ── Requirements / Architecture ──────────────────────────────────────────
+
+  async generateRequirements(projectId) {
+    return this.request(`/ai/requirements/${projectId}/`, { method: 'POST' });
+  }
+
+  async generateArchitecture(projectId) {
+    return this.request(`/ai/architecture/${projectId}/`, { method: 'POST' });
+  }
+
+  // ── GitHub Push ───────────────────────────────────────────────────────────
+
+  async githubPush(projectId, { repo_name, private: isPrivate, description }) {
+    return this.request(`/core/projects/${projectId}/github-push/`, {
+      method: 'POST',
+      body: JSON.stringify({ repo_name, private: isPrivate, description }),
     });
   }
 

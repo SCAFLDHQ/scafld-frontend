@@ -27,7 +27,7 @@ export default function ProjectCard({ name, framework, lastModified, status, pro
   };
 
   const handleOpen = () => {
-    navigate(`/canvas/${project.id}`);
+    navigate(`/project/${project.id}`);
   };
 
   const handleGenerate = async () => {

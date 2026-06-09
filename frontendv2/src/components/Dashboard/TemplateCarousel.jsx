@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import apiService from '../../services/api';
 
-export default function TemplateCarousel() {
+export default function TemplateCarousel({ searchQuery = '' }) {
   const navigate = useNavigate();
   const [startIndex, setStartIndex] = useState(0);
   const [templates, setTemplates] = useState([]);
@@ -49,7 +49,7 @@ export default function TemplateCarousel() {
       });
       const data = await response.json();
       if (response.ok && data.project_id) {
-        navigate(`/canvas/${data.project_id}`);
+        navigate(`/project/${data.project_id}`);
       } else {
         alert(data.error || 'Failed to create project from template');
       }
@@ -89,7 +89,20 @@ export default function TemplateCarousel() {
     setStartIndex(Math.min(templates.length - itemsToShow, startIndex + 1));
   };
 
-  const visibleTemplates = templates.slice(startIndex, startIndex + itemsToShow);
+  const filteredTemplates = searchQuery.trim()
+    ? templates.filter(t => {
+        const q = searchQuery.toLowerCase();
+        return (
+          t.name?.toLowerCase().includes(q) ||
+          t.description?.toLowerCase().includes(q) ||
+          t.framework?.toLowerCase().includes(q)
+        );
+      })
+    : templates;
+
+  const visibleTemplates = searchQuery.trim()
+    ? filteredTemplates
+    : filteredTemplates.slice(startIndex, startIndex + itemsToShow);
 
   return (
     <div className="space-y-4">
@@ -98,24 +111,31 @@ export default function TemplateCarousel() {
           <h2 className="text-white text-xl sm:text-2xl mb-2">Popular Templates</h2>
           <p className="text-white/60 text-sm sm:text-base">Start with pre-built templates to ship faster</p>
         </div>
-        <div className="flex items-center gap-2 self-end sm:self-center">
-          <button
-            onClick={handlePrev}
-            disabled={startIndex === 0}
-            className="p-2 border border-white/10 text-white/60 hover:text-white hover:bg-white/5 transition-colors disabled:opacity-30 disabled:cursor-not-allowed rounded-lg"
-          >
-            <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
-          </button>
-          <button
-            onClick={handleNext}
-            disabled={startIndex >= templates.length - itemsToShow}
-            className="p-2 border border-white/10 text-white/60 hover:text-white hover:bg-white/5 transition-colors disabled:opacity-30 disabled:cursor-not-allowed rounded-lg"
-          >
-            <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
-          </button>
-        </div>
+        {!searchQuery && (
+          <div className="flex items-center gap-2 self-end sm:self-center">
+            <button
+              onClick={handlePrev}
+              disabled={startIndex === 0}
+              className="p-2 border border-white/10 text-white/60 hover:text-white hover:bg-white/5 transition-colors disabled:opacity-30 disabled:cursor-not-allowed rounded-lg"
+            >
+              <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
+            </button>
+            <button
+              onClick={handleNext}
+              disabled={startIndex >= templates.length - itemsToShow}
+              className="p-2 border border-white/10 text-white/60 hover:text-white hover:bg-white/5 transition-colors disabled:opacity-30 disabled:cursor-not-allowed rounded-lg"
+            >
+              <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
+            </button>
+          </div>
+        )}
       </div>
 
+      {visibleTemplates.length === 0 && searchQuery && (
+        <div className="text-center py-10">
+          <p className="text-white/40 text-sm">No templates match "{searchQuery}"</p>
+        </div>
+      )}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         {visibleTemplates.map((template) => (
           <motion.div

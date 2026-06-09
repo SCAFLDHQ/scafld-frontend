@@ -5,10 +5,9 @@ import { Search, ChevronDown, Settings, LogOut, User, Bell, Menu, X } from 'luci
 import { useAuth } from '../../contexts/AuthContext';
 import apiService from '../../services/api';
 
-export default function DashboardNavbar() {
+export default function DashboardNavbar({ searchQuery = '', onSearchChange }) {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [searchValue, setSearchValue] = useState('');
   const [userProfile, setUserProfile] = useState(null);
   const { user, logout } = useAuth();
 
@@ -62,8 +61,8 @@ export default function DashboardNavbar() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
               <input
                 type="text"
-                value={searchValue}
-                onChange={(e) => setSearchValue(e.target.value)}
+                value={searchQuery}
+                onChange={(e) => onSearchChange?.(e.target.value)}
                 placeholder="Search projects, templates, or commands..."
                 className="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 text-white placeholder-white/40 focus:outline-none focus:border-[#29142e] transition-colors text-sm rounded-lg"
               />
@@ -129,20 +128,12 @@ export default function DashboardNavbar() {
                     </div>
                     <div className="p-2">
                       <Link
-                        to="/profile"
-                        onClick={() => setIsProfileOpen(false)}
-                        className="flex items-center gap-3 px-3 py-2 text-white/60 hover:text-white hover:bg-white/5 transition-colors text-sm rounded"
-                      >
-                        <User className="w-4 h-4" />
-                        Profile
-                      </Link>
-                      <Link
                         to="/settings"
                         onClick={() => setIsProfileOpen(false)}
                         className="flex items-center gap-3 px-3 py-2 text-white/60 hover:text-white hover:bg-white/5 transition-colors text-sm rounded"
                       >
                         <Settings className="w-4 h-4" />
-                        Settings
+                        Account Settings
                       </Link>
                     </div>
                     <div className="p-2 border-t border-white/10">
@@ -167,8 +158,8 @@ export default function DashboardNavbar() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/40" />
             <input
               type="text"
-              value={searchValue}
-              onChange={(e) => setSearchValue(e.target.value)}
+              value={searchQuery}
+              onChange={(e) => onSearchChange?.(e.target.value)}
               placeholder="Search projects, templates, or commands..."
               className="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 text-white placeholder-white/40 focus:outline-none focus:border-[#29142e] transition-colors text-sm rounded-lg"
             />

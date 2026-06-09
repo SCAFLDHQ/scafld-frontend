@@ -57,7 +57,7 @@ export default function CreateProjectWizard({ isOpen, onClose, onComplete }) {
       if (res.ok) {
         const data = await res.json();
         onClose();
-        navigate(`/canvas/${data.project_id}`);
+        navigate(`/project/${data.project_id}`);
       } else {
         const err = await res.json();
         setError(err.error || 'AI generation failed. Please try again.');

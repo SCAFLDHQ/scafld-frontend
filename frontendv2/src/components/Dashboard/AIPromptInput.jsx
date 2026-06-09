@@ -57,7 +57,7 @@ export default function AIPromptInput({ onGenerating }) {
       }
 
       saveHistory(prompt.trim());
-      navigate(`/canvas/${data.project_id}`);
+      navigate(`/project/${data.project_id}`);
     } catch (err) {
       setError('Could not reach the server. Is the backend running?');
     } finally {

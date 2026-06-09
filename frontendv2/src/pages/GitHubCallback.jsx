@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { motion } from 'motion/react';
 import { Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
+import apiService from '../services/api';
 
 export default function GitHubCallback() {
   const navigate = useNavigate();
@@ -45,6 +46,23 @@ export default function GitHubCallback() {
           setStatus('error');
           setErrorMessage('No authorization code received. Please try again.');
           setTimeout(() => navigate('/login', { replace: true }), 3000);
+          return;
+        }
+
+        // If this is a popup connect flow (state starts with "connect_"), handle separately
+        if (state?.startsWith('connect_') && window.opener) {
+          try {
+            const res = await apiService.githubConnect(code);
+            const data = await res.json();
+            if (res.ok) {
+              window.opener.postMessage({ type: 'github_connected', ...data }, window.location.origin);
+            } else {
+              window.opener.postMessage({ type: 'github_connect_error', error: data.error || 'Connection failed' }, window.location.origin);
+            }
+          } catch {
+            window.opener.postMessage({ type: 'github_connect_error', error: 'Connection failed' }, window.location.origin);
+          }
+          window.close();
           return;
         }
 
