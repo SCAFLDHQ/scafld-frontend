@@ -1,19 +1,17 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'motion/react';
 import {
-  ArrowLeft, User, Mail, Calendar, Shield, Zap, Edit2,
+  ArrowLeft, User, Mail, Calendar, Shield, Edit2,
   CheckCircle, AlertTriangle, Lock, Trash2, Key, Copy,
-  RefreshCw, CreditCard, BarChart3, Github, Chrome,
+  RefreshCw, BarChart3, Github, Chrome,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import apiService from '../services/api';
-import PricingUpgrade from '../components/billing/PricingUpgrade';
 
 const NAV = [
   { id: 'profile',   label: 'Profile' },
   { id: 'stats',     label: 'Plan & Stats' },
-  { id: 'billing',   label: 'Billing' },
   { id: 'security',  label: 'Account Security' },
   { id: 'api-keys',  label: 'API Keys' },
   { id: 'danger',    label: 'Delete Account' },
@@ -53,31 +51,13 @@ function Alert({ type, message }) {
 
 export default function AccountSettings() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const { user: authUser } = useAuth();
   const contentRef = useRef(null);
 
   const [profile, setProfile] = useState(null);
   const [activeSection, setActiveSection] = useState('profile');
 
-  // Payment verification
-  const [paymentMsg, setPaymentMsg] = useState({ type: '', text: '' });
   useEffect(() => {
-    const payment = searchParams.get('payment');
-    const reference = searchParams.get('reference');
-    const tier = searchParams.get('tier');
-
-    if (payment === 'success' && reference) {
-      apiService.verifyPayment(reference).then(res => res.json()).then(data => {
-        if (data.tier) {
-          setPaymentMsg({ type: 'success', text: `Payment confirmed! You're now on the ${data.tier.charAt(0).toUpperCase() + data.tier.slice(1)} plan.` });
-          setProfile(p => p ? { ...p, tier: data.tier } : p);
-        }
-      }).catch(() => setPaymentMsg({ type: 'error', text: 'Payment received but verification failed. Contact support.' }));
-    } else if (payment === 'success' && tier) {
-      setPaymentMsg({ type: 'success', text: `Upgrade to ${tier} initiated. Verifying payment…` });
-    }
-
     apiService.getProfile().then(r => r.json()).then(d => {
       setProfile(d);
       setForm({ first_name: d.first_name || '', last_name: d.last_name || '' });
@@ -241,10 +221,8 @@ export default function AccountSettings() {
             Back
           </button>
           <h1 className="text-2xl font-bold">Account Settings</h1>
-          <p className="text-white/40 text-sm mt-1">Manage your profile, plan, and security.</p>
+          <p className="text-white/40 text-sm mt-1">Manage your profile and security.</p>
         </div>
-
-        {paymentMsg.text && <div className="mb-6"><Alert type={paymentMsg.type} message={paymentMsg.text} /></div>}
 
         <div className="flex gap-14">
           {/* Sidebar TOC */}
@@ -373,27 +351,6 @@ export default function AccountSettings() {
                 </Card>
               </section>
             )}
-
-            {/* Billing */}
-            <section>
-              <SectionTitle id="billing" icon={CreditCard} title="Billing" />
-              <Card>
-                <div className="flex items-center gap-3 mb-4">
-                  <span className="text-white/50 text-sm">Current plan:</span>
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium border ${tierColors[tier] || tierColors.free}`}>
-                    {tierLabel}
-                  </span>
-                  {tier === 'free' && (
-                    <span className="text-white/30 text-xs">{profile?.credits ?? 0} credits remaining</span>
-                  )}
-                </div>
-                {tier === 'max' ? (
-                  <p className="text-white/40 text-sm">You're on the Max plan — you have everything.</p>
-                ) : (
-                  <PricingUpgrade currentTier={tier} />
-                )}
-              </Card>
-            </section>
 
             {/* Account Security */}
             <section>
