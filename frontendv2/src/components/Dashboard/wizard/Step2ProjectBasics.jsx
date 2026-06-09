@@ -2,14 +2,14 @@ import { motion } from 'motion/react';
 import { Coins } from 'lucide-react';
 
 const templates = [
-  { id: 'blank', name: 'Blank Project', description: 'Start from scratch with minimal setup', credits: 0 },
-  { id: 'rest-api', name: 'REST API Starter', description: 'Basic REST API with sample endpoints', credits: 10 },
-  { id: 'auth', name: 'Auth Template', description: 'Pre-configured authentication system', credits: 20 },
-  { id: 'crud', name: 'Full CRUD', description: 'Complete CRUD operations template', credits: 15 },
+  { id: 'blank',    name: 'Blank Project',    description: 'Start from scratch with minimal setup', credits: 0 },
+  { id: 'rest-api', name: 'REST API Starter', description: 'Basic REST API with sample endpoints',   credits: 10 },
+  { id: 'auth',     name: 'Auth Template',    description: 'Pre-configured authentication system',   credits: 20 },
+  { id: 'crud',     name: 'Full CRUD',        description: 'Complete CRUD operations template',       credits: 15 },
 ];
 
 export default function Step2ProjectBasics({ data, onUpdate, onNext, onBack }) {
-  const canProceed = data.projectName && data.framework && data.template;
+  const canProceed = data.projectName && data.template;
 
   return (
     <motion.div
@@ -24,7 +24,6 @@ export default function Step2ProjectBasics({ data, onUpdate, onNext, onBack }) {
       </div>
 
       <div className="grid lg:grid-cols-2 gap-6">
-        {/* Project Name */}
         <div className="space-y-2">
           <label className="block text-white text-sm">Project Name *</label>
           <input
@@ -36,7 +35,6 @@ export default function Step2ProjectBasics({ data, onUpdate, onNext, onBack }) {
           />
         </div>
 
-        {/* Description */}
         <div className="space-y-2">
           <label className="block text-white text-sm">Description</label>
           <input
@@ -46,33 +44,6 @@ export default function Step2ProjectBasics({ data, onUpdate, onNext, onBack }) {
             placeholder="A brief description of your project"
             className="w-full px-4 py-3 bg-white/5 border border-white/10 text-white placeholder-white/40 focus:outline-none focus:border-[#29142e] transition-colors"
           />
-        </div>
-      </div>
-
-      {/* Framework Selection */}
-      <div className="space-y-3">
-        <label className="block text-white text-sm">Framework *</label>
-        <div className="grid grid-cols-3 gap-4">
-          {['Django', 'Express.js', 'Flask'].map((framework) => (
-            <button
-              key={framework}
-              onClick={() => onUpdate({ framework })}
-              className={`p-4 border-2 transition-all ${
-                data.framework === framework
-                  ? 'bg-[#29142e] border-[#29142e] text-white'
-                  : 'bg-white/5 border-white/10 text-white/60 hover:border-white/30'
-              }`}
-            >
-              <div className="text-center">
-                <div className="mb-2">{framework}</div>
-                <div className="text-xs opacity-60">
-                  {framework === 'Django' && 'Python'}
-                  {framework === 'Express.js' && 'Node.js'}
-                  {framework === 'Flask' && 'Python'}
-                </div>
-              </div>
-            </button>
-          ))}
         </div>
       </div>
 
@@ -107,7 +78,6 @@ export default function Step2ProjectBasics({ data, onUpdate, onNext, onBack }) {
         </div>
       </div>
 
-      {/* Credit Cost */}
       <div className="flex items-center gap-2 p-4 bg-white/5 border border-white/10">
         <Coins className="w-5 h-5 text-[#29142e]" />
         <span className="text-white/60">
@@ -117,7 +87,6 @@ export default function Step2ProjectBasics({ data, onUpdate, onNext, onBack }) {
         </span>
       </div>
 
-      {/* Navigation */}
       <div className="flex items-center gap-4 pt-4">
         <motion.button
           whileHover={{ scale: 1.02 }}

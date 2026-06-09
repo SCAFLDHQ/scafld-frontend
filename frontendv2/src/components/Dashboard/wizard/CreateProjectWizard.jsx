@@ -53,7 +53,7 @@ export default function CreateProjectWizard({ isOpen, onClose, onComplete }) {
     setIsLoading(true);
     setError('');
     try {
-      const res = await apiService.generateWithAI(prompt, updated.framework || 'django');
+      const res = await apiService.generateWithAI(prompt);
       if (res.ok) {
         const data = await res.json();
         onClose();
@@ -88,7 +88,6 @@ export default function CreateProjectWizard({ isOpen, onClose, onComplete }) {
       const res = await apiService.createProject({
         name: wizardData.projectName,
         description: wizardData.description || '',
-        framework: wizardData.framework || 'django',
       });
       if (res.ok) {
         const project = await res.json();

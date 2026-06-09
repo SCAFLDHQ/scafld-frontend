@@ -26,7 +26,6 @@ function saveHistory(prompt) {
 export default function AIPromptInput({ onGenerating }) {
   const navigate = useNavigate();
   const [prompt, setPrompt] = useState('');
-  const [framework, setFramework] = useState('django');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -48,7 +47,7 @@ export default function AIPromptInput({ onGenerating }) {
     if (onGenerating) onGenerating(true);
 
     try {
-      const res = await apiService.generateWithAI(prompt.trim(), framework);
+      const res = await apiService.generateWithAI(prompt.trim());
       const data = await res.json();
 
       if (!res.ok) {
@@ -100,17 +99,6 @@ export default function AIPromptInput({ onGenerating }) {
               className="flex-1 bg-transparent text-white placeholder-white/40 focus:outline-none text-sm sm:text-base min-w-0 disabled:opacity-50"
             />
           </div>
-
-          {/* Framework picker */}
-          <select
-            value={framework}
-            onChange={e => setFramework(e.target.value)}
-            disabled={loading}
-            className="bg-white/5 border border-white/10 text-white/70 text-xs px-3 py-2 rounded-lg focus:outline-none focus:border-[#29142e] disabled:opacity-50"
-          >
-            <option value="django">Django</option>
-            <option value="express">Express.js</option>
-          </select>
 
           <motion.button
             type="submit"

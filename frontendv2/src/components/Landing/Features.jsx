@@ -9,8 +9,8 @@ const features = [
   },
   {
     icon: Code2,
-    title: 'Multi-framework Code Generation',
-    description: 'Generate production-ready Django or Express.js code instantly from your schema design.'
+    title: 'AI-Ready Spec Export',
+    description: 'Export a rich JSON/YAML spec your AI agent uses as precise architectural context — any language, any framework.'
   },
   {
     icon: Terminal,

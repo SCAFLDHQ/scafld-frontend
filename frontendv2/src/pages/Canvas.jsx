@@ -26,11 +26,13 @@ import RelationshipModal from '../components/Canvas/RelationshipModal';
 import CanvasSidebar from '../components/Canvas/CanvasSidebar';
 import CanvasAIChat from '../components/Canvas/CanvasAIChat';
 import ProjectSettingsModal from '../components/Canvas/ProjectSettingsModal';
+import GenerateCodeModal from '../components/Canvas/GenerateCodeModal';
 import RequirementsPanel from '../components/Canvas/tabs/RequirementsPanel';
 import ArchitecturePanel from '../components/Canvas/tabs/ArchitecturePanel';
 import GitHubPanel from '../components/Canvas/tabs/GitHubPanel';
 import MCPPanel from '../components/Canvas/tabs/MCPPanel';
 import OverviewPanel from '../components/Canvas/tabs/OverviewPanel';
+import ComingSoonPanel from '../components/Canvas/tabs/ComingSoonPanel';
 
 const NODE_TYPES = { modelNode: ModelNode };
 
@@ -182,7 +184,7 @@ export default function Canvas() {
   const [saving, setSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState(null);
   const [exporting, setExporting] = useState(false);
-  const [generating, setGenerating] = useState(false);
+  const generating = false; // generation now handled inside GenerateCodeModal
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
   const [promptCopied, setPromptCopied] = useState(false);
@@ -203,6 +205,7 @@ export default function Canvas() {
   const [pendingConnection, setPendingConnection] = useState(null);
   const [aiChatOpen, setAiChatOpen] = useState(false);
   const [projectSettingsOpen, setProjectSettingsOpen] = useState(false);
+  const [generateModalOpen, setGenerateModalOpen] = useState(false);
 
   const autoSaveTimer = useRef(null);
   const pendingPositions = useRef({});
@@ -520,47 +523,27 @@ export default function Canvas() {
       return `### ${m.name}\nFields:\n${fields || '  (none)'}\nRelationships:\n${rels || '  (none)'}`;
     }).join('\n\n');
 
-    const djangoInstructions = `Generate the following Django files from this schema:
-- models.py (with all fields, relationships, Meta classes, __str__ methods)
-- serializers.py (ModelSerializer for each model with nested reads)
-- views.py (ModelViewSet for each model with filtering and pagination)
-- urls.py (router-based URL conf)
-- admin.py (register all models)
-
-Follow these rules:
-- Use UUID primary keys
-- Add created_at / updated_at where missing
-- Use IsAuthenticated for all viewsets
-- Include proper on_delete for ForeignKey fields
-- Add db_index=True for frequently filtered fields`;
-
-    const expressInstructions = `Generate the following Express.js files from this schema:
-- prisma/schema.prisma (full Prisma schema with all models and relations)
-- src/app.js (Express app with all routes mounted)
-- src/routes/<model>.js for each model (GET, POST, GET/:id, PATCH/:id, DELETE/:id)
-- src/controllers/<model>Controller.js for each model (using Prisma)
-- .env.example
-
-Follow these rules:
-- Use Prisma for all DB access
-- JWT auth middleware on all routes
-- Return paginated results on list endpoints
-- Handle Prisma errors (P2025, P2002) with proper HTTP status codes`;
-
-    const prompt = `You are a senior backend engineer. I have designed my backend schema in Scafld AI. Please generate production-ready code from this schema.
+    const prompt = `You are a senior backend engineer. I have designed my backend architecture in Scafld AI. Generate complete, production-ready ${framework} code from this schema.
 
 ## Project: ${project?.name || 'My Project'}
-## Framework: ${framework}
+## Target: ${framework}
 
 ## Schema
+(Field types use generic markers: CharField=string, IntegerField=int, BooleanField=bool, DateTimeField=datetime, DecimalField=decimal, UUIDField=uuid — translate to ${framework} native types.)
 
 ${modelLines}
 
-## Instructions
+## Requirements
+- Generate all files needed to run the project (models, routes/controllers, auth, deps manifest, .env.example)
+- Full CRUD REST endpoints per model: list, create, retrieve, update, delete
+- JWT authentication on all routes
+- PostgreSQL as the database
+- Paginated list endpoints
+- Proper HTTP status codes (200, 201, 204, 400, 401, 404, 422)
+- Follow ${framework} best practices throughout
+- No placeholder comments or TODO lines — write every line
 
-${framework === 'express' ? expressInstructions : djangoInstructions}
-
-Generate all files. For each file, start with the filename as a comment or heading.`;
+For each file, start with the filename as a comment or heading.`;
 
     try {
       await navigator.clipboard.writeText(prompt);
@@ -581,22 +564,7 @@ Generate all files. For each file, start with the filename as a comment or headi
     } catch { showToast('error', 'Copy failed.'); }
   };
 
-  // ── Code generation ─────────────────────────────────────────────────────
-  const handleGenerateCode = async () => {
-    setGenerating(true);
-    try {
-      const res = await apiService.generateCode(projectId);
-      if (!res.ok) {
-        const data = await res.json();
-        showToast('error', data.error || data.errors?.join(' ') || 'Code generation failed.');
-        return;
-      }
-      const blob = await res.blob();
-      downloadBlob(blob, `${project?.name || projectId}-generated.zip`);
-      showToast('success', 'Code generated — download started!');
-    } catch { showToast('error', 'Code generation failed. Check your connection.'); }
-    finally { setGenerating(false); }
-  };
+  const handleGenerateCode = () => setGenerateModalOpen(true);
 
   // ── Render ──────────────────────────────────────────────────────────────
   if (loading) {
@@ -813,6 +781,18 @@ Generate all files. For each file, start with the filename as a comment or headi
               )}
               {activeTab === 'github' && <GitHubPanel projectId={projectId} projectName={project?.name} />}
               {activeTab === 'mcp' && <MCPPanel projectId={projectId} />}
+              {activeTab === 'security' && (
+                <ComingSoonPanel
+                  title="Security Audit"
+                  description="Automated security checks for your schema — auth gaps, exposed endpoints, missing rate limits, and more."
+                />
+              )}
+              {activeTab === 'deploy' && (
+                <ComingSoonPanel
+                  title="One-Click Deploy"
+                  description="Deploy your generated backend to Render, Railway, or Fly.io directly from Scafld — no DevOps required."
+                />
+              )}
             </div>
           </div>
         )}
@@ -843,6 +823,14 @@ Generate all files. For each file, start with the filename as a comment or headi
           onClose={() => setProjectSettingsOpen(false)}
           onUpdated={(updated) => { setProject(updated); setProjectSettingsOpen(false); }}
           onDeleted={() => navigate('/dashboard')}
+        />
+      )}
+      {generateModalOpen && (
+        <GenerateCodeModal
+          project={project}
+          modelCount={nodes.length}
+          onClose={() => setGenerateModalOpen(false)}
+          onDone={() => showToast('success', 'Code generated — download started!')}
         />
       )}
     </div>

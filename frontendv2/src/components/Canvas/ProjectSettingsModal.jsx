@@ -135,8 +135,36 @@ function GeneralTab({ project, onClose, onUpdated, onDeleted }) {
         <div>
           <label className="text-white/50 text-xs mb-1.5 block">Framework</label>
           <select className={inputCls} value={framework} onChange={e => setFramework(e.target.value)}>
-            <option value="django">Django</option>
-            <option value="express">Express.js</option>
+            <optgroup label="Python">
+              <option value="django">Django + DRF</option>
+              <option value="fastapi">FastAPI</option>
+              <option value="flask">Flask</option>
+            </optgroup>
+            <optgroup label="Node / TypeScript">
+              <option value="express">Express.js + Prisma</option>
+              <option value="nestjs">NestJS</option>
+            </optgroup>
+            <optgroup label="Go">
+              <option value="gin">Go + Gin</option>
+              <option value="chi">Go + Chi</option>
+            </optgroup>
+            <optgroup label="Rust">
+              <option value="axum">Rust + Axum</option>
+              <option value="actix">Rust + Actix-Web</option>
+            </optgroup>
+            <optgroup label="JVM">
+              <option value="spring">Java + Spring Boot</option>
+              <option value="ktor">Kotlin + Ktor</option>
+            </optgroup>
+            <optgroup label="Ruby / PHP">
+              <option value="rails">Ruby on Rails</option>
+              <option value="laravel">Laravel</option>
+            </optgroup>
+            <optgroup label="Other">
+              <option value="servant">Haskell + Servant</option>
+              <option value="phoenix">Elixir + Phoenix</option>
+              <option value="dotnet">.NET / ASP.NET Core</option>
+            </optgroup>
           </select>
         </div>
         <Alert type={msg.type} message={msg.text} />

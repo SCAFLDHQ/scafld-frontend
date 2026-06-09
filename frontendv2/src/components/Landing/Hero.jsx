@@ -11,11 +11,11 @@ export default function Hero() {
   const navigate = useNavigate();
 
   const cliLines = [
-    '$ scafld startapp --django',
-    'project_name: Name?',
-    'prompt: Build a Todo List Backend?',
-    'setting up structure...',
-    'installing requirements...',
+    '$ scafld new "multi-tenant SaaS with billing"',
+    'generating architecture...',
+    '✓ 9 models created',
+    '✓ relationships mapped',
+    '$ scafld export --format yaml',
     'scafld has cooked 👨‍🍳'
   ];
 
@@ -121,10 +121,10 @@ export default function Hero() {
         <div className="space-y-6 lg:space-y-8 order-2 lg:order-1">
           <div className="space-y-4">
             <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-white text-center lg:text-left">
-              Build production-ready APIs in minutes, not days
+              The spec layer your AI coder has been missing
             </h1>
             <p className="text-white/60 max-w-xl text-base sm:text-lg text-center lg:text-left">
-              Visually design your database and instantly generate robust Django or Express.js code.
+              Describe your backend in plain English. Scafld builds a visual architecture and exports a precise spec — feed it into Claude Code, Cursor, or Gemini in any language you choose.
             </p>
           </div>
 

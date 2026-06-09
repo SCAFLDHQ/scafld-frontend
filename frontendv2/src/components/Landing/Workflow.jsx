@@ -9,8 +9,8 @@ const steps = [
   },
   {
     icon: Code2,
-    title: 'Generate Code',
-    description: 'Instantly get boilerplate-free, production-ready Django or Express.js code'
+    title: 'Export Spec',
+    description: 'Export a structured JSON/YAML spec — pipe it into any AI coding agent to generate code in your language of choice'
   },
   {
     icon: Cloud,

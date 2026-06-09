@@ -3,6 +3,7 @@ import {
   LayoutDashboard, ArrowLeft, Download, FileJson, FileText,
   Copy, LogOut, Lock, Bot,
   ClipboardList, Network, Github, Cpu, Database, PanelLeftClose, PanelLeftOpen,
+  ShieldCheck, Rocket,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -18,6 +19,8 @@ const VIEWS = [
   { id: 'architecture', icon: Network,         label: 'Architecture' },
   { id: 'github',       icon: Github,          label: 'GitHub'       },
   { id: 'mcp',          icon: Cpu,             label: 'MCP'          },
+  { id: 'security',     icon: ShieldCheck,     label: 'Security',    soon: true },
+  { id: 'deploy',       icon: Rocket,          label: 'Deploy',      soon: true },
 ];
 
 export default function CanvasSidebar({
@@ -110,7 +113,7 @@ export default function CanvasSidebar({
         {!collapsed && (
           <div className="text-white/20 text-[9px] uppercase tracking-widest px-2 mb-2 mt-1">Views</div>
         )}
-        {VIEWS.map(({ id, icon: Icon, label }) => {
+        {VIEWS.map(({ id, icon: Icon, label, soon }) => {
           const isActive = activeTab === id;
           const isGitHub = id === 'github';
           const locked = isGitHub && !tierAtLeast(tier, 'pro');
@@ -129,17 +132,21 @@ export default function CanvasSidebar({
               {!collapsed && (
                 <>
                   <span className="truncate flex-1 text-left">{label}</span>
-                  {locked && (
+                  {soon && (
+                    <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-white/5 text-white/30 border border-white/10">
+                      Soon
+                    </span>
+                  )}
+                  {locked && !soon && (
                     <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-[#7c3aed]/15 text-[#a78bfa]/70 border border-[#7c3aed]/20">
                       Pro
                     </span>
                   )}
                 </>
               )}
-              {/* Tooltip when collapsed */}
               {collapsed && (
                 <div className="absolute left-full ml-2.5 px-2 py-1 bg-[#1a1a1a] border border-white/10 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 whitespace-nowrap shadow-xl">
-                  {label}{locked ? ' (Pro)' : ''}
+                  {label}{soon ? ' (Soon)' : locked ? ' (Pro)' : ''}
                 </div>
               )}
             </button>

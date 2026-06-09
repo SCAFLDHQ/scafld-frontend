@@ -132,10 +132,6 @@ export default function Step1AIOrManual({ onAIQuickCreate, onManualSetup }) {
               </div>
               <div className="flex items-center gap-2 text-white/60">
                 <div className="w-1.5 h-1.5 bg-[#29142e] rounded-full"></div>
-                Framework selection (Django/Express.js)
-              </div>
-              <div className="flex items-center gap-2 text-white/60">
-                <div className="w-1.5 h-1.5 bg-[#29142e] rounded-full"></div>
                 Recommended boilerplates
               </div>
               <div className="flex items-center gap-2 text-white/60">
@@ -147,6 +143,9 @@ export default function Step1AIOrManual({ onAIQuickCreate, onManualSetup }) {
                 Complete CRUD API endpoints
               </div>
             </div>
+            <p className="text-white/30 text-xs mt-4">
+              Language / framework is picked in Project Settings when you're ready to generate code.
+            </p>
           </div>
 
           <div className="flex items-center justify-center gap-2 p-6 bg-[#29142e]/20 border border-[#29142e]">
