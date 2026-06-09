@@ -1,10 +1,12 @@
 import { motion } from 'motion/react';
-import { MoreVertical, Edit, Trash2, Rocket, Calendar, Code2 } from 'lucide-react';
+import { MoreVertical, Trash2, Rocket, Calendar, Code2, ExternalLink } from 'lucide-react';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import apiService from '../../services/api';
 
 export default function ProjectCard({ name, framework, lastModified, status, project, onDelete }) {
   const [showActions, setShowActions] = useState(false);
+  const navigate = useNavigate();
 
   const handleDelete = async () => {
     if (window.confirm('Are you sure you want to delete this project?')) {
@@ -24,40 +26,32 @@ export default function ProjectCard({ name, framework, lastModified, status, pro
     setShowActions(false);
   };
 
+  const handleOpen = () => {
+    navigate(`/canvas/${project.id}`);
+  };
+
   const handleGenerate = async () => {
+    setShowActions(false);
     try {
-      // Get generation cost first
-      const costResponse = await apiService.getGenerationCost(project.id);
-      if (costResponse.ok) {
-        const costData = await costResponse.json();
-        const confirmed = window.confirm(
-          `Generate project code? This will cost ${costData.estimated_cost} credits. You have ${costData.available_credits} credits available.`
-        );
-        
-        if (confirmed) {
-          const response = await apiService.generateProject(project.id);
-          if (response.ok) {
-            // Download the generated file
-            const blob = await response.blob();
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${project.name}_project.zip`;
-            document.body.appendChild(a);
-            a.click();
-            window.URL.revokeObjectURL(url);
-            document.body.removeChild(a);
-          } else {
-            const errorData = await response.json();
-            alert(errorData.error || 'Failed to generate project');
-          }
-        }
+      const response = await apiService.generateCode(project.id);
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${project.name}-generated.zip`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+      } else {
+        const data = await response.json();
+        alert(data.error || 'Generation failed. Open the project to add models first.');
       }
     } catch (error) {
       console.error('Error generating project:', error);
       alert('Failed to generate project');
     }
-    setShowActions(false);
   };
 
   const statusColors = {
@@ -106,9 +100,9 @@ export default function ProjectCard({ name, framework, lastModified, status, pro
               exit={{ opacity: 0, scale: 0.95 }}
               className="absolute right-0 top-full mt-1 sm:mt-2 w-32 sm:w-40 bg-[#1a1a1a] border border-white/10 rounded-lg z-10"
             >
-              <button className="w-full flex items-center gap-2 sm:gap-3 px-3 py-2 text-white/60 hover:text-white hover:bg-white/5 transition-colors text-xs sm:text-sm">
-                <Edit className="w-3 h-3 sm:w-4 sm:h-4" />
-                <span>Edit</span>
+              <button onClick={handleOpen} className="w-full flex items-center gap-2 sm:gap-3 px-3 py-2 text-white/60 hover:text-white hover:bg-white/5 transition-colors text-xs sm:text-sm">
+                <ExternalLink className="w-3 h-3 sm:w-4 sm:h-4" />
+                <span>Open Canvas</span>
               </button>
               <button 
                 onClick={handleGenerate}
@@ -147,6 +141,7 @@ export default function ProjectCard({ name, framework, lastModified, status, pro
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
+            onClick={handleOpen}
             className="flex-1 px-3 sm:px-4 py-1.5 sm:py-2 bg-[#29142e] text-white text-xs sm:text-sm hover:bg-[#3a1f4a] transition-colors rounded"
           >
             Open

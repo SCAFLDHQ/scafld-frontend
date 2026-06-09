@@ -1,6 +1,8 @@
 import { motion } from 'motion/react';
+import { useNavigate } from 'react-router-dom';
 
-export default function CTASection({ onNavigate }) {
+export default function CTASection() {
+  const navigate = useNavigate();
   return (
     <section className="px-4 sm:px-6 py-16 md:py-24 bg-black">
       <motion.div
@@ -23,7 +25,7 @@ export default function CTASection({ onNavigate }) {
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => onNavigate('register')}
+            onClick={() => navigate('/register')}
             className="px-6 sm:px-8 md:px-10 py-3 sm:py-4 md:py-5 bg-[#29142e] text-white transition-all rounded-lg font-bold text-sm sm:text-base"
           >
             Get Started Free

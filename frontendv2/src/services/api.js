@@ -24,10 +24,7 @@ class ApiService {
   async request(endpoint, options = {}) {
     const url = `${this.baseURL}${endpoint}`;
     const config = {
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
+      headers: { 'Content-Type': 'application/json', ...options.headers },
       ...options,
     };
 
@@ -36,18 +33,26 @@ class ApiService {
     }
 
     try {
-      const response = await fetch(url, config);
+      let response = await fetch(url, config);
 
       if (response.status === 401 && this.refreshToken) {
         try {
-          const refreshResponse = await this.refreshAccessToken();
-          if (refreshResponse.ok) {
-            const refreshData = await refreshResponse.json();
-            this.setTokens(refreshData.access, refreshData.refresh);
-            config.headers.Authorization = `Bearer ${refreshData.access}`;
-            return fetch(url, config);
+          const refreshRes = await fetch(`${this.baseURL}/token/refresh/`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ refresh: this.refreshToken }),
+          });
+          if (refreshRes.ok) {
+            const { access, refresh } = await refreshRes.json();
+            this.setTokens(access, refresh);
+            config.headers.Authorization = `Bearer ${access}`;
+            response = await fetch(url, config);
+          } else {
+            this.clearTokens();
+            window.location.href = '/login';
+            throw new Error('Session expired');
           }
-        } catch (refreshError) {
+        } catch {
           this.clearTokens();
           window.location.href = '/login';
           throw new Error('Session expired');
@@ -61,155 +66,306 @@ class ApiService {
     }
   }
 
-  async refreshAccessToken() {
-    return fetch(`${this.baseURL}/auth/token/refresh/`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        refresh: this.refreshToken,
-      }),
-    });
-  }
+  // ── Auth ──────────────────────────────────────────────────────────────────
 
-  // Authentication methods
   async login(email, password) {
-    const response = await fetch(`${this.baseURL}/auth/login/`, {
+    return fetch(`${this.baseURL}/auth/login/`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
     });
-    return response;
   }
 
   async register(userData) {
-    const response = await fetch(`${this.baseURL}/auth/register/`, {
+    return fetch(`${this.baseURL}/auth/register/`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         username: userData.username,
         email: userData.email,
         password: userData.password,
         password2: userData.confirmPassword,
         first_name: userData.firstName || '',
-        last_name: userData.lastName || ''
+        last_name: userData.lastName || '',
       }),
     });
-    return response;
+  }
+
+  async logout() {
+    return this.request('/auth/logout/', { method: 'POST' });
   }
 
   async getProfile() {
-    const response = await this.request('/auth/profile/');
-    return response;
+    return this.request('/auth/profile/');
   }
 
-  // OAuth methods
+  async updateProfile(data) {
+    return this.request('/auth/profile/', {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
+  // ── OAuth ─────────────────────────────────────────────────────────────────
+
   async googleOAuth(token) {
-    const response = await fetch(`${this.baseURL}/auth/google/`, {
+    return fetch(`${this.baseURL}/auth/google/`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ token }),
     });
-    return response;
   }
 
   async getGoogleOAuthConfig() {
-    const response = await fetch(`${this.baseURL}/auth/google/config/`);
-    return response;
+    return fetch(`${this.baseURL}/auth/google/config/`);
   }
 
   async githubOAuth(code) {
-    const response = await fetch(`${this.baseURL}/auth/github/`, {
+    return fetch(`${this.baseURL}/auth/github/`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ code }),
     });
-    return response;
   }
 
   async getGitHubOAuthConfig() {
-    const response = await fetch(`${this.baseURL}/auth/github/config/`);
-    return response;
+    return fetch(`${this.baseURL}/auth/github/config/`);
   }
 
-  // Credits and subscription methods
-  async getCreditStats() {
-    const response = await this.request('/auth/credits/stats/');
-    return response;
-  }
+  // ── Projects ──────────────────────────────────────────────────────────────
 
-  async getSubscriptionTiers() {
-    const response = await this.request('/auth/subscription/tiers/');
-    return response;
-  }
-
-  // Project methods
   async getProjects() {
-    const response = await this.request('/scaffolder/projects/');
-    return response;
+    return this.request('/core/projects/');
   }
 
   async getProject(id) {
-    const response = await this.request(`/scaffolder/projects/${id}/`);
-    return response;
+    return this.request(`/core/projects/${id}/`);
   }
 
-  async createProject(projectData) {
-    const response = await this.request('/scaffolder/projects/', {
+  async createProject(data) {
+    return this.request('/core/projects/', {
       method: 'POST',
-      body: JSON.stringify(projectData)
+      body: JSON.stringify(data),
     });
-    return response;
   }
 
-  async updateProject(id, projectData) {
-    const response = await this.request(`/scaffolder/projects/${id}/`, {
-      method: 'PUT',
-      body: JSON.stringify(projectData)
+  async updateProject(id, data) {
+    return this.request(`/core/projects/${id}/`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
     });
-    return response;
   }
 
   async deleteProject(id) {
-    const response = await this.request(`/scaffolder/projects/${id}/`, {
-      method: 'DELETE'
-    });
-    return response;
+    return this.request(`/core/projects/${id}/`, { method: 'DELETE' });
   }
 
-  async generateProject(id) {
-    const response = await this.request(`/scaffolder/projects/${id}/generate/`, {
-      method: 'POST'
-    });
-    return response;
-  }
-
-  async getGenerationCost(id) {
-    const response = await this.request(`/scaffolder/projects/${id}/generation_cost/`);
-    return response;
-  }
-
-  // Template methods
-  async getTemplates() {
-    const response = await this.request('/scaffolder/templates/');
-    return response;
-  }
-
-  async useTemplate(templateId, projectData) {
-    const response = await this.request(`/scaffolder/templates/${templateId}/use_template/`, {
+  async initiatePayment(tier, callback_url) {
+    return this.request('/billing/payment/initiate/', {
       method: 'POST',
-      body: JSON.stringify(projectData)
+      body: JSON.stringify({ tier, callback_url }),
     });
-    return response;
+  }
+
+  async verifyPayment(reference) {
+    return this.request(`/billing/payment/verify/?reference=${reference}`);
+  }
+
+  async changePassword(old_password, new_password) {
+    return this.request('/auth/change-password/', {
+      method: 'POST',
+      body: JSON.stringify({ old_password, new_password, new_password2: new_password }),
+    });
+  }
+
+  async deleteAccount(password) {
+    return this.request('/auth/delete-account/', {
+      method: 'DELETE',
+      body: JSON.stringify({ password }),
+    });
+  }
+
+  async getApiKey() {
+    return this.request('/auth/api-key/');
+  }
+
+  async generateApiKey() {
+    return this.request('/auth/api-key/', { method: 'POST' });
+  }
+
+  async revokeApiKey() {
+    return this.request('/auth/api-key/', { method: 'DELETE' });
+  }
+
+  async requestPasswordReset(email) {
+    return fetch(`${this.baseURL}/auth/password-reset/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+  }
+
+  async confirmPasswordReset(token, new_password) {
+    return fetch(`${this.baseURL}/auth/password-reset/confirm/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token, new_password }),
+    });
+  }
+
+  // ── Canvas / IR ───────────────────────────────────────────────────────────
+
+  async getProjectIR(id) {
+    return this.request(`/core/projects/${id}/ir/`);
+  }
+
+  async getProjectModels(projectId) {
+    return this.request(`/core/models/?project=${projectId}`);
+  }
+
+  async createModel(data) {
+    return this.request('/core/models/', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteModel(id) {
+    return this.request(`/core/models/${id}/`, { method: 'DELETE' });
+  }
+
+  async createField(data) {
+    return this.request('/core/fields/', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateField(id, data) {
+    return this.request(`/core/fields/${id}/`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteField(id) {
+    return this.request(`/core/fields/${id}/`, { method: 'DELETE' });
+  }
+
+  async createRelationship(data) {
+    return this.request('/core/relationships/', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteRelationship(id) {
+    return this.request(`/core/relationships/${id}/`, { method: 'DELETE' });
+  }
+
+  async iterateSchema(projectId, context) {
+    return this.request(`/ai/iterate/${projectId}/`, {
+      method: 'POST',
+      body: JSON.stringify({ context }),
+    });
+  }
+
+  async updateModelPositions(positions) {
+    return this.request('/core/models/update_positions/', {
+      method: 'POST',
+      body: JSON.stringify({ positions }),
+    });
+  }
+
+  async createSnapshot(projectId, description = '') {
+    return this.request(`/core/projects/${projectId}/snapshot/`, {
+      method: 'POST',
+      body: JSON.stringify({ description }),
+    });
+  }
+
+  async getSnapshots(projectId) {
+    return this.request(`/core/projects/${projectId}/snapshots/`);
+  }
+
+  // ── Collaborators ─────────────────────────────────────────────────────────
+
+  async getCollaborators(projectId) {
+    return this.request(`/core/projects/${projectId}/collaborators/`);
+  }
+
+  async addCollaborator(projectId, email, role = 'editor') {
+    return this.request(`/core/projects/${projectId}/collaborators/`, {
+      method: 'POST',
+      body: JSON.stringify({ email, role }),
+    });
+  }
+
+  async removeCollaborator(projectId, userId) {
+    return this.request(`/core/projects/${projectId}/collaborators/`, {
+      method: 'DELETE',
+      body: JSON.stringify({ user_id: userId }),
+    });
+  }
+
+  // ── Export ────────────────────────────────────────────────────────────────
+
+  async exportProject(id, format = 'json') {
+    return this.request(`/core/projects/${id}/export/`, {
+      method: 'POST',
+      body: JSON.stringify({ format }),
+    });
+  }
+
+  // ── Code Generation ───────────────────────────────────────────────────────
+
+  async generateCode(id) {
+    return this.request(`/core/projects/${id}/generate/`, { method: 'POST' });
+  }
+
+  // ── AI Generation ─────────────────────────────────────────────────────────
+
+  async generateWithAI(description, framework = 'django') {
+    return this.request('/ai/generate/', {
+      method: 'POST',
+      body: JSON.stringify({ description, framework }),
+    });
+  }
+
+  async previewSchema(description, framework = 'django') {
+    return this.request('/ai/preview/', {
+      method: 'POST',
+      body: JSON.stringify({ description, framework }),
+    });
+  }
+
+  // ── Templates ─────────────────────────────────────────────────────────────
+
+  async getTemplates() {
+    // Hardcoded templates — no backend endpoint needed
+    const templates = [
+      { id: 'saas', name: 'Multi-tenant SaaS', description: 'Users, workspaces, billing, and file uploads', framework: 'django' },
+      { id: 'ecommerce', name: 'E-commerce', description: 'Products, orders, cart, payments, and reviews', framework: 'django' },
+      { id: 'social', name: 'Social App', description: 'Users, posts, comments, likes, and followers', framework: 'django' },
+      { id: 'blog', name: 'Blog Platform', description: 'Authors, posts, categories, tags, and comments', framework: 'django' },
+      { id: 'taskapp', name: 'Task Manager', description: 'Users, teams, projects, tasks, and deadlines', framework: 'django' },
+      { id: 'marketplace', name: 'Marketplace', description: 'Buyers, sellers, listings, bids, and transactions', framework: 'express' },
+    ];
+    return new Response(JSON.stringify(templates), { status: 200, headers: { 'Content-Type': 'application/json' } });
+  }
+
+  async useTemplate(templateId, data) {
+    // Templates use the AI generate endpoint with the template description
+    return this.request('/ai/generate/', {
+      method: 'POST',
+      body: JSON.stringify({ description: data.description, framework: data.framework || 'django' }),
+    });
+  }
+
+  // ── MCP ───────────────────────────────────────────────────────────────────
+
+  async getMCPSchema(projectId) {
+    return this.request(`/mcp/schema/?project=${projectId}`);
   }
 }
 

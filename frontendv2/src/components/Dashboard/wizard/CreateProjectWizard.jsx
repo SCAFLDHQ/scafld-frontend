@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import apiService from '../../../services/api';
 import Step1AIOrManual from './Step1AIOrManual';
 import Step2ProjectBasics from './Step2ProjectBasics';
 import Step3BoilerplateOptions from './Step3BoilerplateOptions';
@@ -10,8 +12,10 @@ import Step6ReviewCreate from './Step6ReviewCreate';
 import LoadingCooking from './LoadingCooking';
 
 export default function CreateProjectWizard({ isOpen, onClose, onComplete }) {
+  const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
   const [wizardData, setWizardData] = useState({
     projectName: '',
     description: '',
@@ -44,14 +48,25 @@ export default function CreateProjectWizard({ isOpen, onClose, onComplete }) {
   ];
 
   const handleAIQuickCreate = async (prompt) => {
-    setWizardData({ ...wizardData, aiPrompt: prompt, isAIGenerated: true });
+    const updated = { ...wizardData, aiPrompt: prompt, isAIGenerated: true };
+    setWizardData(updated);
     setIsLoading(true);
-    
-    // Simulate AI generation
-    setTimeout(() => {
+    setError('');
+    try {
+      const res = await apiService.generateWithAI(prompt, updated.framework || 'django');
+      if (res.ok) {
+        const data = await res.json();
+        onClose();
+        navigate(`/canvas/${data.project_id}`);
+      } else {
+        const err = await res.json();
+        setError(err.error || 'AI generation failed. Please try again.');
+        setIsLoading(false);
+      }
+    } catch {
+      setError('AI generation failed. Please try again.');
       setIsLoading(false);
-      onComplete(wizardData);
-    }, 3000);
+    }
   };
 
   const handleNext = () => {
@@ -68,12 +83,26 @@ export default function CreateProjectWizard({ isOpen, onClose, onComplete }) {
 
   const handleFinalCreate = async () => {
     setIsLoading(true);
-    
-    // Simulate project creation
-    setTimeout(() => {
+    setError('');
+    try {
+      const res = await apiService.createProject({
+        name: wizardData.projectName,
+        description: wizardData.description || '',
+        framework: wizardData.framework || 'django',
+      });
+      if (res.ok) {
+        const project = await res.json();
+        setIsLoading(false);
+        onComplete(project);
+      } else {
+        const err = await res.json();
+        setError(err.name?.[0] || err.error || 'Failed to create project.');
+        setIsLoading(false);
+      }
+    } catch {
+      setError('Failed to create project. Please try again.');
       setIsLoading(false);
-      onComplete(wizardData);
-    }, 3000);
+    }
   };
 
   const updateWizardData = (data) => {
@@ -138,6 +167,13 @@ export default function CreateProjectWizard({ isOpen, onClose, onComplete }) {
             ))}
           </div>
         </div>
+
+        {/* Error banner */}
+        {error && (
+          <div className="px-6 py-2 bg-red-500/10 border-b border-red-500/20 text-red-400 text-sm">
+            {error}
+          </div>
+        )}
 
         {/* Step Content */}
         <div className="flex-1 overflow-y-auto p-6">

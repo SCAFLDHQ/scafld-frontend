@@ -27,13 +27,11 @@ export default function SocialAuthButtons() {
         let googleData = null;
         if (googleResponse.ok) {
           googleData = await googleResponse.json();
-          console.log('Google config loaded:', googleData);
         }
-        
+
         let githubData = null;
         if (githubResponse.ok) {
           githubData = await githubResponse.json();
-          console.log('GitHub config loaded:', githubData);
         }
 
         setOauthConfig({ google: googleData, github: githubData });
@@ -47,7 +45,6 @@ export default function SocialAuthButtons() {
 
   const handleGoogleLogin = () => {
     if (!oauthConfig.google?.client_id || loading.google) {
-      console.log('Google not configured or loading');
       alert('Google OAuth is not configured. Please contact support.');
       return;
     }
@@ -73,12 +70,6 @@ export default function SocialAuthButtons() {
         `&nonce=${encodeURIComponent(nonce)}` +
         `&prompt=select_account`;
 
-      console.log('Google Auth URL:', googleAuthUrl);
-      console.log('Redirect URI being used:', redirectUri);
-
-      console.log('Redirecting to Google:', googleAuthUrl);
-      
-      // For popup flow, redirect directly
       window.location.href = googleAuthUrl;
     } catch (error) {
       console.error('Google login failed:', error);
@@ -89,7 +80,6 @@ export default function SocialAuthButtons() {
 
   const handleGitHubLogin = () => {
     if (!oauthConfig.github?.client_id || loading.github) {
-      console.log('GitHub not configured or loading');
       alert('GitHub OAuth is not configured. Please contact support.');
       return;
     }
@@ -111,7 +101,6 @@ export default function SocialAuthButtons() {
         `&scope=${scope}` +
         `&state=${state}`;
 
-      console.log('Redirecting to GitHub:', githubUrl);
       window.location.href = githubUrl;
     } catch (error) {
       console.error('GitHub login failed:', error);

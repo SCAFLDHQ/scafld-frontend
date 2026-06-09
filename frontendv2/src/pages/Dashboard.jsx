@@ -55,10 +55,8 @@ export default function Dashboard({ onProjectCreated }) {
 
   const handleWizardComplete = (projectData) => {
     setIsWizardOpen(false);
-    setProjects(prev => [projectData, ...prev]);
-    if (onProjectCreated) {
-      onProjectCreated(projectData);
-    }
+    fetchDashboardData();
+    if (onProjectCreated) onProjectCreated(projectData);
   };
 
   const handleProjectDeleted = (projectId) => {
@@ -98,7 +96,7 @@ export default function Dashboard({ onProjectCreated }) {
             <div>
               <h2 className="text-white text-xl sm:text-2xl mb-2">Your Projects</h2>
               <p className="text-white/60 text-sm sm:text-base">
-                {projects.length} projects • {userProfile?.credits || userProfile?.credit_balance || 0} credits remaining
+                {projects.length} projects • {['pro','max'].includes(userProfile?.tier) ? 'Unlimited' : `${userProfile?.credits ?? 0} credits`} remaining
               </p>
             </div>
             <button
@@ -151,7 +149,9 @@ export default function Dashboard({ onProjectCreated }) {
           </div>
           <div className="bg-white/5 border border-white/10 p-4 sm:p-6 rounded-lg">
             <div className="text-white/40 text-xs sm:text-sm mb-2">Credits Remaining</div>
-            <div className="text-white text-xl sm:text-2xl">{userProfile?.credits || userProfile?.credit_balance || 0}</div>
+            <div className="text-white text-xl sm:text-2xl">
+              {['pro','max'].includes(userProfile?.tier) ? '∞' : (userProfile?.credits ?? 0)}
+            </div>
           </div>
           <div className="bg-white/5 border border-white/10 p-4 sm:p-6 rounded-lg">
             <div className="text-white/40 text-xs sm:text-sm mb-2">Subscription</div>

@@ -30,12 +30,6 @@ export default function GoogleCallback() {
         const errorDescription = params.get('error_description');
         const state = params.get('state');
 
-        console.log('Google callback received:', { 
-          hasIdToken: !!idToken, 
-          error, 
-          errorDescription 
-        });
-
         // Handle OAuth errors from Google
         if (error) {
           console.error('Google OAuth error:', error, errorDescription);
@@ -71,13 +65,10 @@ export default function GoogleCallback() {
         // Clean up stored state
         sessionStorage.removeItem('google_oauth_state');
 
-        // Send id_token to backend
-        console.log('Sending ID token to backend...');
         setStatus('processing');
         const result = await googleLogin(idToken);
 
         if (result.success) {
-          console.log('Google login successful');
           setStatus('success');
           // Short delay to show success message
           setTimeout(() => {

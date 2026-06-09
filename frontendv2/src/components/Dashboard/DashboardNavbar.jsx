@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { Link } from 'react-router-dom';
 import { Search, ChevronDown, Settings, LogOut, User, Bell, Menu, X } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import apiService from '../../services/api';
@@ -73,18 +74,18 @@ export default function DashboardNavbar() {
           <div className="flex items-center gap-4 sm:gap-6 flex-shrink-0">
             {/* Desktop Navigation */}
             <div className="hidden sm:flex items-center gap-6">
-              <a href="#marketplace" className="text-white/60 hover:text-white transition-colors text-sm">
+              <Link to="/marketplace" className="text-white/60 hover:text-white transition-colors text-sm">
                 Marketplace
-              </a>
-              <a href="#pricing" className="text-white/60 hover:text-white transition-colors text-sm">
+              </Link>
+              <Link to="/pricing" className="text-white/60 hover:text-white transition-colors text-sm">
                 Pricing
-              </a>
-              <a href="#templates" className="text-white/60 hover:text-white transition-colors text-sm">
+              </Link>
+              <Link to="/templates" className="text-white/60 hover:text-white transition-colors text-sm">
                 Templates
-              </a>
-              <a href="#tools" className="text-white/60 hover:text-white transition-colors text-sm">
+              </Link>
+              <Link to="/tools" className="text-white/60 hover:text-white transition-colors text-sm">
                 Tools
-              </a>
+              </Link>
             </div>
 
             {/* Notifications */}
@@ -123,24 +124,26 @@ export default function DashboardNavbar() {
                       </div>
                       <div className="text-white/40 text-xs">{userProfile?.email || user?.email}</div>
                       <div className="text-white/60 text-xs mt-1">
-                        {userProfile?.credits || userProfile?.credit_balance || 0} credits • {userProfile?.subscription_tier?.name || userProfile?.tier || 'Free'}
+                        {['pro','max'].includes(userProfile?.tier) ? 'Unlimited' : `${userProfile?.credits ?? 0} credits`} • {userProfile?.subscription_tier?.name || userProfile?.tier || 'Free'}
                       </div>
                     </div>
                     <div className="p-2">
-                      <a
-                        href="#profile"
+                      <Link
+                        to="/profile"
+                        onClick={() => setIsProfileOpen(false)}
                         className="flex items-center gap-3 px-3 py-2 text-white/60 hover:text-white hover:bg-white/5 transition-colors text-sm rounded"
                       >
                         <User className="w-4 h-4" />
                         Profile
-                      </a>
-                      <a
-                        href="#settings"
+                      </Link>
+                      <Link
+                        to="/settings"
+                        onClick={() => setIsProfileOpen(false)}
                         className="flex items-center gap-3 px-3 py-2 text-white/60 hover:text-white hover:bg-white/5 transition-colors text-sm rounded"
                       >
                         <Settings className="w-4 h-4" />
                         Settings
-                      </a>
+                      </Link>
                     </div>
                     <div className="p-2 border-t border-white/10">
                       <button 
@@ -182,18 +185,18 @@ export default function DashboardNavbar() {
               className="sm:hidden mt-4 overflow-hidden"
             >
               <div className="bg-white/5 border border-white/10 rounded-lg p-4 space-y-4">
-                <a href="#marketplace" className="block text-white/60 hover:text-white transition-colors py-2" onClick={() => setIsMobileMenuOpen(false)}>
+                <Link to="/marketplace" className="block text-white/60 hover:text-white transition-colors py-2" onClick={() => setIsMobileMenuOpen(false)}>
                   Marketplace
-                </a>
-                <a href="#pricing" className="block text-white/60 hover:text-white transition-colors py-2" onClick={() => setIsMobileMenuOpen(false)}>
+                </Link>
+                <Link to="/pricing" className="block text-white/60 hover:text-white transition-colors py-2" onClick={() => setIsMobileMenuOpen(false)}>
                   Pricing
-                </a>
-                <a href="#templates" className="block text-white/60 hover:text-white transition-colors py-2" onClick={() => setIsMobileMenuOpen(false)}>
+                </Link>
+                <Link to="/templates" className="block text-white/60 hover:text-white transition-colors py-2" onClick={() => setIsMobileMenuOpen(false)}>
                   Templates
-                </a>
-                <a href="#tools" className="block text-white/60 hover:text-white transition-colors py-2" onClick={() => setIsMobileMenuOpen(false)}>
+                </Link>
+                <Link to="/tools" className="block text-white/60 hover:text-white transition-colors py-2" onClick={() => setIsMobileMenuOpen(false)}>
                   Tools
-                </a>
+                </Link>
               </div>
             </motion.div>
           )}

@@ -1,12 +1,15 @@
 import { motion } from 'motion/react';
-import { ChevronLeft, ChevronRight, Star, Download } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Loader2, Star, Download } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import apiService from '../../services/api';
 
 export default function TemplateCarousel() {
+  const navigate = useNavigate();
   const [startIndex, setStartIndex] = useState(0);
   const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [usingTemplate, setUsingTemplate] = useState(null);
   const [itemsToShow, setItemsToShow] = useState(1);
 
   // Responsive items to show
@@ -30,29 +33,30 @@ export default function TemplateCarousel() {
         const data = await response.json();
         setTemplates(data.results || data);
       }
-    } catch (error) {
-      console.error('Error fetching templates:', error);
+    } catch {
+      // silently fail — templates are non-critical
     } finally {
       setLoading(false);
     }
   };
 
   const handleUseTemplate = async (template) => {
+    setUsingTemplate(template.id);
     try {
-      const projectName = `${template.name} Project`;
       const response = await apiService.useTemplate(template.id, {
-        name: projectName,
-        description: template.description
+        description: template.description,
+        framework: template.framework || 'django',
       });
-      
-      if (response.ok) {
-        window.location.reload();
+      const data = await response.json();
+      if (response.ok && data.project_id) {
+        navigate(`/canvas/${data.project_id}`);
       } else {
-        alert('Failed to create project from template');
+        alert(data.error || 'Failed to create project from template');
       }
-    } catch (error) {
-      console.error('Error using template:', error);
+    } catch {
       alert('Failed to create project from template');
+    } finally {
+      setUsingTemplate(null);
     }
   };
 
@@ -162,12 +166,15 @@ export default function TemplateCarousel() {
                 </div>
               </div>
               <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+                whileHover={{ scale: usingTemplate ? 1 : 1.05 }}
+                whileTap={{ scale: usingTemplate ? 1 : 0.95 }}
                 onClick={() => handleUseTemplate(template)}
-                className="px-3 sm:px-4 py-1.5 sm:py-2 bg-[#29142e] text-white text-xs sm:text-sm transition-all hover:bg-[#3a1f4a] rounded"
+                disabled={!!usingTemplate}
+                className="flex items-center gap-1.5 px-3 sm:px-4 py-1.5 sm:py-2 bg-[#29142e] text-white text-xs sm:text-sm transition-all hover:bg-[#3a1f4a] disabled:opacity-60 rounded"
               >
-                Use Template
+                {usingTemplate === template.id
+                  ? <><Loader2 className="w-3 h-3 animate-spin" /> Generating…</>
+                  : 'Use Template'}
               </motion.button>
             </div>
           </motion.div>
