@@ -1,67 +1,85 @@
-import { Zap, Crown, Check } from 'lucide-react';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Zap, Crown, Check, ArrowRight, RefreshCw } from 'lucide-react';
+import apiService from '../../services/api';
 
 const PLANS = [
   {
     id: 'pro',
     name: 'Pro',
-    price: '₦15,000',
+    price: '₦10,000',
     period: '/month',
     icon: Zap,
     color: '#7c3aed',
+    dailyCredits: 50,
     features: [
+      '50 credits/day',
       'Unlimited projects',
-      'Unlimited AI generations',
-      'Code generation (Django + Express)',
+      'Code generation',
       'GitHub push',
-      'Priority support',
+      'Private projects',
     ],
   },
   {
     id: 'max',
     name: 'Max',
-    price: '₦30,000',
+    price: '₦25,000',
     period: '/month',
     icon: Crown,
     color: '#f59e0b',
+    dailyCredits: 100,
     features: [
+      '100 credits/day',
       'Everything in Pro',
       'VS Code MCP extension',
       'Team collaboration',
-      'Early access to new features',
       'Dedicated support',
     ],
   },
 ];
 
-export default function PricingUpgrade({ currentTier = 'free' }) {
+export default function PricingUpgrade({ currentTier = 'free', onUpgraded }) {
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState('');
+  const [error, setError] = useState('');
+
+  const handleUpgrade = async (tierId) => {
+    setError('');
+    setLoading(tierId);
+    try {
+      const callbackUrl = `${window.location.origin}/pricing?payment=success&type=subscription`;
+      const res = await apiService.initiatePayment(tierId, callbackUrl);
+      const data = await res.json();
+      if (!res.ok) { setError(data.error || 'Could not start payment.'); return; }
+      window.location.href = data.authorization_url;
+    } catch {
+      setError('Could not reach the payment server. Try again.');
+    } finally {
+      setLoading('');
+    }
+  };
+
   return (
     <div className="space-y-4">
-      {/* Coming soon banner */}
-      <div
-        className="flex items-center gap-3 px-4 py-3 rounded-xl border border-[#7c3aed]/30 bg-[#29142e]/30"
-        style={{ fontFamily: "'Press Start 2P', monospace" }}
-      >
-        <span className="text-[#a78bfa] text-[10px] leading-relaxed">
-          Paid plans — coming soon
-        </span>
-        <span
-          className="text-[#a78bfa] text-xs"
-          style={{ animation: 'blink 1s steps(1) infinite' }}
-        >▮</span>
-      </div>
+      {error && (
+        <div className="px-4 py-3 rounded-xl border border-red-500/30 bg-red-500/10 text-red-400 text-sm">
+          {error}
+        </div>
+      )}
 
-      <style>{`@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }`}</style>
-
-      {/* Plan preview cards — display only, buttons disabled */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {PLANS.map((plan) => {
           const Icon = plan.icon;
           const isCurrent = currentTier === plan.id;
+          const isLoading = loading === plan.id;
+
           return (
             <div
               key={plan.id}
-              className={`relative border rounded-xl p-5 space-y-4 opacity-60 ${
-                isCurrent ? 'border-[#7c3aed] bg-[#7c3aed]/5' : 'border-white/10 bg-white/5'
+              className={`relative border rounded-xl p-5 space-y-4 transition-colors ${
+                isCurrent
+                  ? 'border-[#7c3aed] bg-[#7c3aed]/5'
+                  : 'border-white/10 bg-white/5 hover:border-white/20'
               }`}
             >
               {isCurrent && (
@@ -80,6 +98,7 @@ export default function PricingUpgrade({ currentTier = 'free' }) {
                   </div>
                 </div>
               </div>
+
               <ul className="space-y-2">
                 {plan.features.map((f) => (
                   <li key={f} className="flex items-start gap-2 text-white/60 text-sm">
@@ -88,19 +107,36 @@ export default function PricingUpgrade({ currentTier = 'free' }) {
                   </li>
                 ))}
               </ul>
+
               <button
-                disabled
-                className="w-full py-2.5 rounded-lg text-sm font-medium bg-white/5 text-white/20 cursor-not-allowed"
+                onClick={() => isCurrent ? null : handleUpgrade(plan.id)}
+                disabled={isCurrent || isLoading}
+                className={`w-full py-2.5 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-2 ${
+                  isCurrent
+                    ? 'bg-white/5 text-white/30 cursor-not-allowed'
+                    : plan.id === 'pro'
+                      ? 'bg-[#7c3aed] hover:bg-[#6d28d9] text-white'
+                      : 'bg-white/10 hover:bg-white/15 text-white border border-white/10'
+                }`}
               >
-                Coming Soon
+                {isLoading ? (
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                ) : isCurrent ? (
+                  'Current plan'
+                ) : (
+                  <>
+                    Upgrade to {plan.name}
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </>
+                )}
               </button>
             </div>
           );
         })}
       </div>
 
-      <p className="text-white/20 text-xs text-center">
-        Pricing finalised before launch. Follow us for updates.
+      <p className="text-white/30 text-xs text-center">
+        Payments processed by Paystack · Cancel anytime · <button onClick={() => navigate('/pricing')} className="underline hover:text-white/50 transition-colors">View full pricing</button>
       </p>
     </div>
   );

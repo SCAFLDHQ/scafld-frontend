@@ -4,7 +4,7 @@ import { motion } from 'motion/react';
 import {
   ArrowLeft, User, Mail, Calendar, Shield, Edit2,
   CheckCircle, AlertTriangle, Lock, Trash2, Key, Copy,
-  RefreshCw, BarChart3, Github, Chrome,
+  RefreshCw, BarChart3, Github, Chrome, Bug,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import apiService from '../services/api';
@@ -111,6 +111,7 @@ export default function AccountSettings() {
 
   // API Key
   const [apiKey, setApiKey] = useState(null);
+  const [apiKeyRevealed, setApiKeyRevealed] = useState(false);
   const [apiKeyLoading, setApiKeyLoading] = useState(true);
   const [apiKeyCopied, setApiKeyCopied] = useState(false);
   const [apiKeyMsg, setApiKeyMsg] = useState({ type: '', text: '' });
@@ -118,7 +119,7 @@ export default function AccountSettings() {
   useEffect(() => {
     if (profile?.tier !== 'max') { setApiKeyLoading(false); return; }
     apiService.getApiKey().then(res => res.json()).then(d => {
-      if (d.has_key) setApiKey('sk-scafld-••••••••••••••••••••••••');
+      if (d.has_key) { setApiKey('sk-scafld-••••••••••••••••••••••••'); setApiKeyRevealed(false); }
     }).catch(() => {}).finally(() => setApiKeyLoading(false));
   }, [profile?.tier]);
 
@@ -130,6 +131,7 @@ export default function AccountSettings() {
       const data = await res.json();
       if (res.ok) {
         setApiKey(data.api_key);
+        setApiKeyRevealed(true);
         setApiKeyMsg({ type: 'success', text: "Key generated. Copy it now — it won't be shown again in full." });
       } else {
         setApiKeyMsg({ type: 'error', text: data.error || 'Failed to generate key.' });
@@ -326,17 +328,29 @@ export default function AccountSettings() {
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-8 gap-y-5 text-sm">
                     <div>
                       <div className="text-white/40 text-xs mb-1">Subscription</div>
-                      <div className="text-white font-medium capitalize">{profile.subscription_tier?.name || tierLabel}</div>
+                      <div className="text-white font-medium capitalize">{tierLabel}</div>
                     </div>
                     <div>
-                      <div className="text-white/40 text-xs mb-1">Credits remaining</div>
-                      <div className="text-white font-medium">{['pro', 'max'].includes(tier) ? '∞' : (profile.credits ?? 0)}</div>
+                      <div className="text-white/40 text-xs mb-1">Daily credits</div>
+                      <div className="text-white font-medium">
+                        {profile.credits ?? 0}
+                        <span className="text-white/30 font-normal"> / {profile.daily_limit ?? 10}</span>
+                      </div>
                     </div>
                     <div>
-                      <div className="text-white/40 text-xs mb-1">AI generations today</div>
+                      <div className="text-white/40 text-xs mb-1">Pack credits</div>
+                      <div className="text-white font-medium">
+                        {profile.pack_credits ?? 0}
+                        {(profile.pack_credits ?? 0) > 0 && (
+                          <span className="text-[#a78bfa] text-xs font-normal ml-1">used first</span>
+                        )}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-white/40 text-xs mb-1">AI gens today</div>
                       <div className="text-white font-medium">
                         {profile.ai_gens_today ?? 0}
-                        <span className="text-white/30 font-normal"> / {tier === 'free' ? '10' : '∞'}</span>
+                        <span className="text-white/30 font-normal"> / {profile.daily_limit ?? 10}</span>
                       </div>
                     </div>
                     <div>
@@ -345,7 +359,7 @@ export default function AccountSettings() {
                     </div>
                     <div>
                       <div className="text-white/40 text-xs mb-1">Projects limit</div>
-                      <div className="text-white font-medium">{profile.projects_limit || profile.project_limit || '∞'}</div>
+                      <div className="text-white font-medium">{tier === 'free' ? '3' : tier === 'pro' ? '25' : '∞'}</div>
                     </div>
                   </div>
                 </Card>
@@ -445,10 +459,14 @@ export default function AccountSettings() {
                       <div className="space-y-3">
                         <div className="flex items-center gap-2 bg-black/40 border border-white/10 rounded-lg px-4 py-2.5">
                           <span className="font-mono text-sm text-white/70 flex-1 truncate">{apiKey}</span>
-                          <button onClick={() => { navigator.clipboard.writeText(apiKey); setApiKeyCopied(true); setTimeout(() => setApiKeyCopied(false), 2000); }}
-                            className="text-white/40 hover:text-white transition-colors flex-shrink-0" title="Copy">
-                            {apiKeyCopied ? <CheckCircle className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
-                          </button>
+                          {apiKeyRevealed ? (
+                            <button onClick={() => { navigator.clipboard.writeText(apiKey); setApiKeyCopied(true); setTimeout(() => setApiKeyCopied(false), 2000); }}
+                              className="text-white/40 hover:text-white transition-colors flex-shrink-0" title="Copy key">
+                              {apiKeyCopied ? <CheckCircle className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
+                            </button>
+                          ) : (
+                            <span className="text-white/20 text-xs flex-shrink-0">regenerate to copy</span>
+                          )}
                         </div>
                         <div className="flex gap-3">
                           <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} onClick={handleGenerateApiKey}
@@ -505,6 +523,29 @@ export default function AccountSettings() {
 
           </main>
         </div>
+
+        {/* Bug Report */}
+        <div className="mt-12 pt-8 border-t border-white/8">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 rounded-2xl border border-white/8 bg-white/2 px-6 py-5">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center">
+                <Bug className="w-4 h-4 text-red-400" />
+              </div>
+              <div>
+                <div className="text-white text-sm font-medium">Found a bug or have a suggestion?</div>
+                <div className="text-white/40 text-xs mt-0.5">We read every report. Takes less than a minute.</div>
+              </div>
+            </div>
+            <a
+              href={`mailto:coder0214h@gmail.com?subject=${encodeURIComponent('Scafld Bug Report')}&body=${encodeURIComponent(`Page: ${window.location.origin}/settings\n\nDescription:\n`)}`}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm hover:bg-red-500/15 transition-colors whitespace-nowrap flex-shrink-0"
+            >
+              <Bug className="w-3.5 h-3.5" />
+              Report a bug
+            </a>
+          </div>
+        </div>
+
       </div>
     </div>
   );

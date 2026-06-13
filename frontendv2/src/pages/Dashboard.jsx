@@ -108,7 +108,11 @@ export default function Dashboard({ onProjectCreated }) {
             <div>
               <h2 className="text-white text-xl sm:text-2xl mb-2">Your Projects</h2>
               <p className="text-white/60 text-sm sm:text-base">
-                {projects.length} projects • {['pro','max'].includes(userProfile?.tier) ? 'Unlimited' : `${userProfile?.credits ?? 0} credits`} remaining
+                {projects.length} projects •{' '}
+                {userProfile?.credits ?? 0}/{userProfile?.daily_limit ?? 10} daily credits
+                {(userProfile?.pack_credits ?? 0) > 0 && (
+                  <span className="text-[#a78bfa]"> + {userProfile.pack_credits} pack</span>
+                )}
               </p>
             </div>
             <button

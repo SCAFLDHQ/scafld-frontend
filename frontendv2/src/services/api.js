@@ -178,6 +178,13 @@ class ApiService {
     });
   }
 
+  async initiatePackPurchase(pack, callback_url) {
+    return this.request('/billing/pack/initiate/', {
+      method: 'POST',
+      body: JSON.stringify({ pack, callback_url }),
+    });
+  }
+
   async verifyPayment(reference) {
     return this.request(`/billing/payment/verify/?reference=${reference}`);
   }

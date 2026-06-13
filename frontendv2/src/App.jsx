@@ -12,6 +12,8 @@ import GitHubCallback from './pages/GitHubCallback';
 import GoogleCallback from './pages/GoogleCallback';
 import { Navigate } from 'react-router-dom';
 import AccountSettings from './pages/AccountSettings';
+import Pricing from './pages/Pricing';
+import Tools from './pages/Tools';
 import ComingSoon from './pages/ComingSoon';
 import NotFound from './pages/NotFound';
 
@@ -42,7 +44,8 @@ export default function App() {
             <ProtectedRoute><AccountSettings /></ProtectedRoute>
           } />
           <Route path="/profile" element={<Navigate to="/settings" replace />} />
-          <Route path="/pricing" element={<ComingSoon />} />
+          <Route path="/pricing" element={<Pricing />} />
+          <Route path="/tools" element={<Tools />} />
           <Route path="/marketplace" element={<ComingSoon />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
